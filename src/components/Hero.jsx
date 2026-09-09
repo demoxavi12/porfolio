@@ -19,7 +19,7 @@ function Hero() {
         </a>
 
         <a
-          href="/resume.pdf"
+          href="/SWARAJ_XAVIER_SUNA_RESUME.pdf"
           target="_blank"
           rel="noopener noreferrer"
           className="btn secondary-btn"
