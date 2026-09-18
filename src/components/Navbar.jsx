@@ -31,7 +31,7 @@ function Navbar() {
             Contact
           </a>
           <a
-            href="/SWARAJ_XAVIER_SUNA_RESUME.pdf"
+            href="/SWARAJXAVIER_CSE_NIST.pdf"
             target="_blank"
             rel="noopener noreferrer"
             className="nav-resume-btn"
@@ -72,4 +72,3 @@ function Navbar() {
 }
 
 export default Navbar;
-
