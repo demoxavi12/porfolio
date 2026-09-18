@@ -13,7 +13,7 @@ function Resume() {
             </p>
           </div>
           <a
-            href="/SWARAJ_XAVIER_SUNA_RESUME.pdf"
+            href="/SWARAJXAVIER_CSE_NIST.pdf"
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary"
