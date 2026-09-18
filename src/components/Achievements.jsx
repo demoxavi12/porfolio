@@ -26,7 +26,7 @@ function Achievements() {
       value: "4+",
       label: "Full-Stack MVPs Built",
       detail:
-        "Architected scalable prototypes with authentication, databases, and optimized APIs.",
+        "Built full-stack applications with authentication, databases, APIs, and modern web technologies.",
       icon: (
         <svg
           width="24"
@@ -46,10 +46,10 @@ function Achievements() {
       ),
     },
     {
-      value: "1,000+",
-      label: "API Calls / Day in Dev",
+      value: "MERN",
+      label: "Full-Stack Development",
       detail:
-        "Handled through Redis caching, WebSocket streaming, and optimized endpoints.",
+        "Building full-stack applications with React, Node.js, Express, and MongoDB.",
       icon: (
         <svg
           width="24"
@@ -62,7 +62,8 @@ function Achievements() {
           strokeLinejoin="round"
           aria-hidden="true"
         >
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
         </svg>
       ),
     },
@@ -95,9 +96,12 @@ function Achievements() {
       <div className="section-container">
         <div className="section-header">
           <p className="section-label">TRACK RECORD</p>
+
           <h2 className="section-title">Key Milestones</h2>
+
           <p className="section-subtitle">
-            Measurable results reflecting continuous technical growth and dedication.
+            Highlights from my development experience, technical learning, and
+            project work.
           </p>
         </div>
 
@@ -105,8 +109,11 @@ function Achievements() {
           {achievements.map((item, index) => (
             <div className="achievement-card" key={index}>
               <div className="achievement-icon-wrapper">{item.icon}</div>
+
               <h3 className="achievement-value">{item.value}</h3>
+
               <h4 className="achievement-label">{item.label}</h4>
+
               <p className="achievement-detail">{item.detail}</p>
             </div>
           ))}
@@ -117,4 +124,3 @@ function Achievements() {
 }
 
 export default Achievements;
-
