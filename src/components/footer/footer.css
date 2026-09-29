@@ -1,0 +1,106 @@
+.footer {
+  position: relative;
+  padding: clamp(64px, 10vh, 112px) var(--gutter) 24px;
+  background: var(--ink);
+  color: var(--paper);
+  overflow: clip;
+}
+
+.footer__top {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: start;
+  gap: 32px;
+  padding-bottom: clamp(48px, 8vh, 96px);
+}
+
+.footer__col h2 {
+  margin-bottom: 16px;
+  color: var(--mute-on-ink);
+  font-weight: 500;
+}
+
+.footer__col li + li {
+  margin-top: 6px;
+}
+
+.footer__col a {
+  font-size: 1.05rem;
+}
+
+.footer__time {
+  font-size: clamp(2rem, 3.4vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.footer__time .mono {
+  color: var(--lime);
+  vertical-align: top;
+}
+
+.footer__place {
+  margin-top: 8px;
+  color: var(--mute-on-ink);
+}
+
+.footer__top-link {
+  color: var(--paper);
+}
+
+/* Giant wordmark that rises out of the floor */
+.footer__word {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15.2vw;
+  line-height: 0.78;
+  margin: 0 -0.02em;
+  color: var(--paper);
+}
+
+.footer__word .chars {
+  padding-bottom: 0;
+}
+
+.footer__word-2 {
+  color: var(--lime);
+}
+
+.footer__base {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 32px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-on-ink);
+  color: var(--mute-on-ink);
+}
+
+.footer__base span:nth-child(2) {
+  flex: 1;
+}
+
+.footer__caret {
+  width: 10px;
+  height: 14px;
+  background: var(--lime);
+  animation: caret 1.1s steps(1) infinite;
+}
+
+@media (max-width: 860px) {
+  .footer__top {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .footer__top-link {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .footer__word {
+    flex-direction: column;
+    font-size: 27vw;
+  }
+}

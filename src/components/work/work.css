@@ -1,0 +1,319 @@
+/* ---------- Section head ---------- */
+
+.work {
+  background: var(--paper);
+}
+
+.work__head {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 30ch);
+  align-items: end;
+  gap: 24px 48px;
+  padding: clamp(96px, 18vh, 200px) var(--gutter) clamp(56px, 10vh, 120px);
+}
+
+.work__count {
+  grid-column: 1 / -1;
+  color: var(--mute);
+}
+
+.work__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 2.4vw;
+  font-weight: inherit;
+  font-size: clamp(3.8rem, 14vw, 15rem);
+  line-height: 0.85;
+}
+
+.work__title .serif {
+  font-size: 1.08em;
+  color: var(--cobalt);
+}
+
+.work__intro {
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+/* ---------- Chapter: static composition (mobile + reduced motion) ---------- */
+
+.chapter {
+  position: relative;
+  color: var(--on-accent);
+}
+
+.chapter__sticky {
+  position: relative;
+  display: grid;
+  gap: 36px;
+  padding: 64px var(--gutter) 72px;
+  background: var(--accent);
+  overflow: hidden;
+}
+
+.chapter__flood,
+.chapter__ghost,
+.chapter__progress {
+  display: none;
+}
+
+.chapter__window {
+  display: block;
+  max-width: 760px;
+}
+
+.chapter__info {
+  display: grid;
+  gap: clamp(12px, 2.2vh, 22px);
+  max-width: 640px;
+}
+
+.chapter__info > * {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s var(--ease-out) calc(var(--k) * 70ms),
+    transform 1s var(--ease-out) calc(var(--k) * 70ms);
+}
+
+.chapter.is-in .chapter__info > * {
+  opacity: 1;
+  transform: none;
+}
+
+.chapter__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  opacity: 0.8;
+}
+
+.chapter__title {
+  font-weight: inherit;
+}
+
+.chapter__title .display {
+  display: block;
+  font-size: clamp(3rem, 6.2vw, 7rem);
+}
+
+.chapter__subtitle {
+  display: block;
+  margin-top: 0.25em;
+  font-size: clamp(1.35rem, 2vw, 2.1rem);
+  line-height: 1.05;
+}
+
+.chapter__summary {
+  max-width: 46ch;
+  font-size: clamp(1rem, 1.15vw, 1.15rem);
+  line-height: 1.45;
+}
+
+.chapter__notes li {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  padding: clamp(6px, 1vh, 9px) 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.chapter__notes .mono {
+  padding-top: 2px;
+  font-size: 0.66rem;
+  opacity: 0.7;
+}
+
+.chapter__stack {
+  line-height: 1.7;
+  opacity: 0.85;
+  text-transform: none;
+}
+
+.chapter__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chapter .btn--line {
+  color: var(--on-accent);
+}
+
+.chapter .btn--line:hover,
+.chapter .btn--line:focus-visible {
+  color: var(--ink);
+}
+
+.btn--solid {
+  background: var(--on-accent);
+  color: var(--accent);
+}
+
+.btn--solid:hover,
+.btn--solid:focus-visible {
+  color: var(--ink);
+}
+
+.chapter[data-theme="dark"] :focus-visible {
+  outline-color: var(--lime);
+}
+
+@media (min-width: 900px) {
+  .chapter__sticky {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    align-items: center;
+    gap: 56px;
+    padding: 96px var(--gutter);
+    min-height: 100vh;
+  }
+
+  .chapter__window {
+    order: 2;
+    max-width: none;
+  }
+}
+
+/* ---------- Chapter: cinematic (desktop, motion allowed) ---------- */
+
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .chapter {
+    height: 290vh;
+  }
+
+  .chapter__sticky {
+    position: sticky;
+    top: 0;
+    display: block;
+    height: 100vh;
+    padding: 0;
+    background: transparent;
+  }
+
+  .chapter__flood {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    clip-path: inset(
+      calc((1 - var(--open, 0)) * 23%) calc((1 - var(--open, 0)) * 31%) round calc((1 - var(--open, 0)) * 18px)
+    );
+    will-change: clip-path;
+  }
+
+  /* The project name slides across; two copies so it changes colour as it
+     crosses the edge of the expanding window. */
+  .chapter__ghost {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    font-size: 30vw;
+    line-height: 0.8;
+    white-space: nowrap;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--ink);
+    transform: translate3d(calc(34vw - var(--p, 0) * 125vw), -50%, 0);
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .chapter__ghost--in {
+    -webkit-text-stroke-color: var(--on-accent);
+    opacity: calc(0.5 - var(--info, 0) * 0.4);
+  }
+
+  .chapter__window {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 3;
+    width: min(60vw, 1000px);
+    max-width: none;
+    transform: translate(-50%, -50%) translateX(calc(var(--shift, 0) * 19vw))
+      scale(calc(0.6 + var(--open, 0) * 0.4 - var(--shift, 0) * 0.2));
+    will-change: transform;
+  }
+
+  .chapter__window .frame {
+    box-shadow:
+      0 0 0 1px rgba(20, 18, 15, 0.12),
+      0 50px 100px -30px rgba(0, 0, 0, 0.55);
+  }
+
+  .chapter__info {
+    position: absolute;
+    top: 50%;
+    left: var(--gutter);
+    z-index: 4;
+    width: min(38vw, 560px);
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .chapter__sticky.is-readable .chapter__info {
+    pointer-events: auto;
+  }
+
+  .chapter__info > *,
+  .chapter.is-in .chapter__info > * {
+    --v: clamp(0, calc(var(--info, 0) * 3.2 - var(--k) * 0.42), 1);
+    opacity: var(--v);
+    transform: translateY(calc((1 - var(--v)) * 34px));
+    transition: none;
+  }
+
+  /* Never hide something that holds keyboard focus. */
+  .chapter__info:focus-within > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  .chapter__progress {
+    display: block;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--on-accent);
+    transform-origin: left;
+    transform: scaleX(var(--p, 0));
+    opacity: var(--open, 0);
+  }
+}
+
+@media (min-width: 900px) and (max-height: 760px) and (prefers-reduced-motion: no-preference) {
+  .chapter__title .display {
+    font-size: clamp(2.6rem, 5vw, 5rem);
+  }
+
+  .chapter__notes li {
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .work__head {
+    grid-template-columns: 1fr;
+  }
+
+  .work__title {
+    font-size: 19vw;
+  }
+
+  .chapter__sticky {
+    padding: 40px var(--gutter) 56px;
+  }
+
+  .chapter__meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

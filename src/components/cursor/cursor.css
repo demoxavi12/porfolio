@@ -1,0 +1,101 @@
+.has-cursor,
+.has-cursor * {
+  cursor: none !important;
+}
+
+/* Text fields keep the native caret-friendly cursor */
+.has-cursor input,
+.has-cursor textarea {
+  cursor: text !important;
+}
+
+.cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.cursor-ready .cursor {
+  opacity: 1;
+}
+
+.cursor__dot,
+.cursor__label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.cursor__dot::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: #fff;
+  transition:
+    width 0.35s var(--ease-out),
+    height 0.35s var(--ease-out),
+    margin 0.35s var(--ease-out),
+    background 0.35s,
+    opacity 0.2s;
+}
+
+.cursor--dot {
+  mix-blend-mode: difference;
+}
+
+[data-cursor-state="link"] .cursor__dot::before {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px #fff;
+}
+
+[data-cursor-state="label"] .cursor__dot::before {
+  opacity: 0;
+}
+
+.cursor-down .cursor__dot::before {
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+}
+
+.cursor__label .cursor__text {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 7px 11px 6px;
+  border-radius: 99px;
+  background: var(--lime);
+  color: var(--ink);
+  font-size: 0.66rem;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px -8px rgba(20, 18, 15, 0.5);
+  transform: scale(0.4);
+  transform-origin: 0 0;
+  opacity: 0;
+  transition:
+    transform 0.35s var(--ease-back),
+    opacity 0.2s;
+}
+
+[data-cursor-state="label"] .cursor__label .cursor__text {
+  transform: none;
+  opacity: 1;
+}
+
+.cursor-ready.cursor-hidden .cursor {
+  opacity: 0;
+}
+
+[data-magnetic] {
+  transition: transform 0.5s var(--ease-out);
+}

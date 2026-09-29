@@ -1,0 +1,244 @@
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  overflow: hidden;
+  clip-path: inset(0 0 0 0);
+}
+
+.intro.is-leaving {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 0.9s var(--ease-in-out);
+}
+
+/* Camera push as the panel lifts */
+.intro.is-leaving .intro__words {
+  transform: scale(1.25) translateY(-6%);
+  filter: blur(6px);
+  transition:
+    transform 0.9s var(--ease-in-out),
+    filter 0.9s var(--ease-in-out);
+}
+
+/* ---- words ---- */
+
+.intro__words {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.intro__word {
+  grid-area: 1 / 1;
+  font-size: clamp(4.5rem, 23vw, 24rem);
+  line-height: 0.85;
+  animation: intro-word-out 0.55s var(--ease-in-out) both;
+  animation-delay: calc(var(--start) + 0.8s);
+}
+
+.intro__word--2 {
+  font-size: clamp(5rem, 27vw, 28rem);
+  line-height: 0.9;
+}
+
+.intro__word--3 {
+  color: var(--ink);
+  background: var(--tangerine);
+  padding: 0 0.08em;
+  animation: intro-word-hold 1.1s var(--ease-out) both;
+  animation-delay: calc(var(--start) + 0.1s);
+}
+
+.intro .chars__c {
+  transform: none;
+  transition: none;
+  animation: intro-char 0.75s var(--ease-out) both;
+  animation-delay: calc(var(--start) + var(--d));
+}
+
+@keyframes intro-char {
+  from {
+    opacity: 0;
+    transform: translateY(115%) scaleY(1.7);
+    filter: blur(10px);
+  }
+  to {
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes intro-word-out {
+  to {
+    opacity: 0;
+    transform: translateY(-14%) scale(1.06);
+    filter: blur(12px);
+  }
+}
+
+@keyframes intro-word-hold {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ---- interface fragments that flash past ---- */
+
+.intro__frags {
+  position: absolute;
+  inset: 0;
+}
+
+.intro__frag {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  aspect-ratio: 16 / 9;
+  padding: 10px 12px;
+  border-radius: 6px;
+  opacity: 0;
+  animation: intro-frag 0.55s var(--ease-out) both;
+  animation-delay: var(--t);
+}
+
+.intro__frag i {
+  font-style: normal;
+  font-size: clamp(0.55rem, 0.9vw, 0.8rem);
+}
+
+.intro__frag--cobalt {
+  background: var(--cobalt);
+  color: var(--paper);
+}
+
+.intro__frag--tangerine {
+  background: var(--tangerine);
+  color: var(--ink);
+}
+
+.intro__frag--lime {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.intro__frag--plum {
+  background: var(--plum);
+  color: var(--paper);
+}
+
+.intro__frag--paper {
+  border: 1px solid rgba(241, 236, 226, 0.5);
+  color: var(--paper);
+}
+
+@keyframes intro-frag {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  18% {
+    opacity: 0.95;
+    transform: none;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04) translateY(-10px);
+  }
+}
+
+.intro__scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--lime);
+  box-shadow: 0 0 24px 2px rgba(212, 245, 60, 0.5);
+  animation: intro-scan 1.1s var(--ease-in-out) 0.05s both;
+}
+
+@keyframes intro-scan {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+/* ---- meta row + skip ---- */
+
+.intro__meta {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: var(--mute-on-ink);
+}
+
+.intro__bar {
+  flex: 1;
+  height: 1px;
+  background: var(--line-on-ink);
+  overflow: hidden;
+}
+
+.intro__bar i {
+  display: block;
+  height: 100%;
+  background: var(--paper);
+  transform-origin: left;
+  animation: intro-bar 3.5s linear both;
+}
+
+@keyframes intro-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.intro__skip {
+  position: absolute;
+  top: 24px;
+  right: var(--gutter);
+  padding: 10px 14px;
+  border: 1px solid var(--line-on-ink);
+  border-radius: 99px;
+  color: var(--paper);
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+
+.intro__skip:hover,
+.intro__skip:focus-visible {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .intro__frag {
+    width: 42vw !important;
+  }
+
+  .intro__meta span:last-child {
+    display: none;
+  }
+}

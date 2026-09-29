@@ -1,0 +1,223 @@
+.record {
+  padding: clamp(96px, 16vh, 180px) var(--gutter) clamp(96px, 14vh, 160px);
+  background: var(--paper-2);
+}
+
+.record__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: clamp(56px, 10vh, 112px);
+}
+
+.record__label {
+  order: 2;
+  color: var(--mute);
+}
+
+.record__title {
+  font-weight: inherit;
+  font-size: clamp(3.2rem, 10vw, 10rem);
+  line-height: 0.85;
+}
+
+.record__title .serif {
+  color: var(--plum);
+}
+
+/* ---------- timeline ---------- */
+
+.record__list {
+  position: relative;
+  --spine: clamp(200px, 30vw, 440px);
+}
+
+.record__list::before,
+.record__list::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--spine);
+  width: 1px;
+}
+
+.record__list::before {
+  background: var(--line);
+}
+
+.record__list::after {
+  background: var(--ink);
+  transform-origin: top;
+  transform: scaleY(var(--p, 0));
+}
+
+.record__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--spine) 1fr;
+  padding: clamp(28px, 5vh, 48px) 0;
+  border-top: 1px solid var(--line);
+}
+
+.record__item:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+/* node on the spine */
+.record__item::before {
+  content: "";
+  position: absolute;
+  top: clamp(36px, 6vh, 58px);
+  left: var(--spine);
+  width: 11px;
+  height: 11px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  transition: background 0.4s;
+}
+
+.record__item.is-in::before {
+  background: var(--tangerine);
+}
+
+.record__year {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1em;
+  padding-right: 24px;
+  font-size: clamp(3rem, 7.4vw, 7.5rem);
+  line-height: 0.8;
+}
+
+.record__year .display {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+  transition: color 0.8s var(--ease-out);
+}
+
+.record__item.is-in .record__year .display {
+  color: var(--ink);
+}
+
+.record__year .serif {
+  font-size: 0.55em;
+  color: var(--mute);
+}
+
+.record__body {
+  display: grid;
+  gap: 8px;
+  padding-left: clamp(24px, 4vw, 64px);
+  opacity: 0;
+  transform: translateX(-20px);
+  transition:
+    opacity 0.8s var(--ease-out) 0.1s,
+    transform 1s var(--ease-out) 0.1s;
+}
+
+.record__item.is-in .record__body {
+  opacity: 1;
+  transform: none;
+}
+
+.record__city {
+  color: var(--mute);
+}
+
+.record__place {
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: clamp(2rem, 4.2vw, 4.2rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.record__what {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.record__detail {
+  max-width: 56ch;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* ---------- certifications ---------- */
+
+.record__certs {
+  display: grid;
+  grid-template-columns: var(--spine, clamp(200px, 30vw, 440px)) 1fr;
+  margin-top: clamp(48px, 8vh, 88px);
+}
+
+.record__certs h3 {
+  color: var(--mute);
+  font-weight: 500;
+  padding-top: 6px;
+}
+
+.record__certs ul {
+  padding-left: clamp(24px, 4vw, 64px);
+}
+
+.record__certs li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.record__cert-name {
+  font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.record__certs .mono {
+  color: var(--mute);
+}
+
+@media (max-width: 760px) {
+  .record__list {
+    --spine: 0px;
+    padding-left: 22px;
+  }
+
+  .record__item {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .record__item::before {
+    left: -22px;
+    margin-left: -5px;
+    top: 36px;
+  }
+
+  .record__list::before,
+  .record__list::after {
+    left: 0;
+  }
+
+  .record__body {
+    padding-left: 0;
+  }
+
+  .record__certs {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .record__certs ul {
+    padding-left: 0;
+  }
+}
