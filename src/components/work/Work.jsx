@@ -10,8 +10,8 @@ export default function Work() {
   const inView = useInView(headRef);
 
   return (
-    <section id="work" className="work" aria-labelledby="work-title">
-      <header className={`work__head ${inView ? "is-in" : ""}`} ref={headRef} data-theme="light">
+    <section id="work" className="work" data-atmos="work" aria-labelledby="work-title">
+      <header className={`work__head ${inView ? "is-in" : ""}`} ref={headRef} data-theme="dark">
         <p className="mono work__count reveal">({String(projects.length).padStart(2, "0")}) Deployed · open source</p>
         <h2 id="work-title" className="work__title" aria-label="Selected work">
           <span className="display">

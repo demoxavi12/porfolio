@@ -13,7 +13,8 @@ const usedIn = (tech) => projects.filter((p) => p.stack.includes(tech));
 // Deterministic scatter so items "spread" into place from across the screen.
 const scatter = (i) => ({
   "--sx": `${(((i * 37) % 13) - 6) * 7}vw`,
-  "--sy": `${(((i * 53) % 9) - 4) * 9}vh`,
+  // Gather from below only, so no item's path ever crosses the selector above the grid.
+  "--sy": `${((i * 53) % 9) * 4 + 6}vh`,
   "--sr": `${(((i * 29) % 7) - 3) * 6}deg`,
   "--si": i,
 });
@@ -87,7 +88,7 @@ export default function Stack() {
   };
 
   return (
-    <section id="stack" ref={sectionRef} className="stack" data-theme="dark" aria-labelledby="stack-title">
+    <section id="stack" ref={sectionRef} className="stack" data-theme="dark" data-atmos="stack" aria-labelledby="stack-title">
       <div className="stack__marquee" aria-hidden="true">
         <div className="stack__track" ref={trackRef}>
           {[...MARQUEE, ...MARQUEE].map((t, i) => (

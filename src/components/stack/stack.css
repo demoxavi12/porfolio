@@ -1,8 +1,8 @@
 .stack {
   position: relative;
   padding: 0 var(--gutter) clamp(96px, 14vh, 160px);
-  background: var(--ink);
-  color: var(--paper);
+  background: transparent;
+  color: var(--ivory);
   overflow: clip;
 }
 
@@ -51,7 +51,7 @@
 /* ---------- head + controls ---------- */
 
 .stack__head {
-  padding: clamp(64px, 12vh, 128px) 0 clamp(32px, 5vh, 56px);
+  padding: clamp(64px, 12vh, 128px) 0 clamp(40px, 6vh, 72px);
 }
 
 .stack__label {
@@ -70,19 +70,20 @@
   color: var(--lime);
 }
 
+/* Its own region in the normal flow: below the heading, above the grid.
+   (It used to be sticky, which let the technology rows scroll underneath it.) */
 .stack__controls {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 3;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 14px 24px;
-  padding: 84px 0 14px;
-  margin-top: -70px;
+  padding: 14px 0;
   margin-bottom: clamp(32px, 6vh, 64px);
-  background: var(--ink);
+  background: rgba(8, 10, 16, 0.82);
+  backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line-on-ink);
 }
 
@@ -329,12 +330,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4px 18px;
-  }
-
-  .stack__controls {
-    position: static;
-    margin-top: 0;
-    padding-top: 14px;
   }
 
   .stack__readout {

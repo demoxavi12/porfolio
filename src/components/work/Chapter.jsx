@@ -22,10 +22,9 @@ export default function Chapter({ project, total }) {
 
   useEffect(() => {
     const el = ref.current;
-    if (!cinematic) {
-      el.dataset.theme = project.theme;
-      return;
-    }
+    // Every chapter lives in the dark system now.
+    el.dataset.theme = "dark";
+    if (!cinematic) return;
     const sticky = stickyRef.current;
     return onFrame(() => {
       const r = el.getBoundingClientRect();
@@ -39,12 +38,12 @@ export default function Chapter({ project, total }) {
       const info = range(p, 0.44, 0.72);
       sticky.style.setProperty("--info", info.toFixed(4));
       sticky.classList.toggle("is-readable", info > 0.45);
-      const theme = open > 0.9 ? project.theme : "light";
-      if (el.dataset.theme !== theme) el.dataset.theme = theme;
-    });
-  }, [cinematic, project.theme]);
 
-  const style = { "--accent": project.accent, "--on-accent": project.onAccent };
+    });
+  }, [cinematic]);
+
+  // Only the accent colour: chapter text is always the light foreground ladder (work.css).
+  const style = { "--accent": project.accent };
 
   return (
     <article
@@ -52,7 +51,7 @@ export default function Chapter({ project, total }) {
       ref={ref}
       className={`chapter ${live ? "is-live" : ""} ${infoIn ? "is-in" : ""}`}
       style={style}
-      data-theme="light"
+      data-theme="dark"
       aria-labelledby={`${project.id}-title`}
     >
       <div className="chapter__sticky" ref={stickyRef}>
@@ -102,7 +101,19 @@ export default function Chapter({ project, total }) {
           </ol>
           <p className="chapter__stack mono" style={{ "--k": 4 }}>
             <span className="sr-only">Built with: </span>
-            {project.stack.join(" / ")}
+            {project.stack.map((tech, i) => (
+              <span key={tech}>
+                {i > 0 && (
+                  <>
+                    <span className="chapter__sep" aria-hidden="true">
+                      {" / "}
+                    </span>
+                    <span className="sr-only">, </span>
+                  </>
+                )}
+                {tech}
+              </span>
+            ))}
           </p>
           <div className="chapter__links" style={{ "--k": 5 }}>
             <a

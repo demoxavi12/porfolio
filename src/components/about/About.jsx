@@ -35,7 +35,7 @@ export default function About() {
   }, [reduced]);
 
   return (
-    <section id="about" className="about" data-theme="light" aria-labelledby="about-title">
+    <section id="about" className="about" data-theme="dark" data-atmos="about" aria-labelledby="about-title">
       <div className="about__top mono">
         <h2 id="about-title">About</h2>
         <span aria-hidden="true">02 / 05</span>

@@ -1,6 +1,7 @@
 .record {
   padding: clamp(96px, 16vh, 180px) var(--gutter) clamp(96px, 14vh, 160px);
-  background: var(--paper-2);
+  background: transparent;
+  color: var(--ivory);
 }
 
 .record__head {
@@ -14,7 +15,7 @@
 
 .record__label {
   order: 2;
-  color: var(--mute);
+  color: var(--night-mute);
 }
 
 .record__title {
@@ -24,7 +25,7 @@
 }
 
 .record__title .serif {
-  color: var(--plum);
+  color: #e29cc2;
 }
 
 /* ---------- timeline ---------- */
@@ -45,11 +46,11 @@
 }
 
 .record__list::before {
-  background: var(--line);
+  background: var(--night-line);
 }
 
 .record__list::after {
-  background: var(--ink);
+  background: var(--ivory);
   transform-origin: top;
   transform: scaleY(var(--p, 0));
 }
@@ -59,11 +60,11 @@
   display: grid;
   grid-template-columns: var(--spine) 1fr;
   padding: clamp(28px, 5vh, 48px) 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--night-line);
 }
 
 .record__item:last-child {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--night-line);
 }
 
 /* node on the spine */
@@ -76,8 +77,8 @@
   height: 11px;
   margin-left: -5px;
   border-radius: 50%;
-  background: var(--paper-2);
-  box-shadow: inset 0 0 0 1.5px var(--ink);
+  background: #0b0d16;
+  box-shadow: inset 0 0 0 1.5px var(--ivory);
   transition: background 0.4s;
 }
 
@@ -96,17 +97,17 @@
 
 .record__year .display {
   color: transparent;
-  -webkit-text-stroke: 1.5px var(--ink);
+  -webkit-text-stroke: 1.5px rgba(241, 236, 226, 0.7);
   transition: color 0.8s var(--ease-out);
 }
 
 .record__item.is-in .record__year .display {
-  color: var(--ink);
+  color: var(--ivory);
 }
 
 .record__year .serif {
   font-size: 0.55em;
-  color: var(--mute);
+  color: var(--night-mute);
 }
 
 .record__body {
@@ -126,7 +127,7 @@
 }
 
 .record__city {
-  color: var(--mute);
+  color: var(--night-mute);
 }
 
 .record__place {
@@ -144,7 +145,7 @@
 
 .record__detail {
   max-width: 56ch;
-  color: var(--ink-2);
+  color: var(--night-soft);
   line-height: 1.5;
 }
 
@@ -157,7 +158,7 @@
 }
 
 .record__certs h3 {
-  color: var(--mute);
+  color: var(--night-mute);
   font-weight: 500;
   padding-top: 6px;
 }
@@ -173,7 +174,7 @@
   justify-content: space-between;
   gap: 8px 24px;
   padding: 14px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--night-line);
 }
 
 .record__cert-name {
@@ -183,7 +184,7 @@
 }
 
 .record__certs .mono {
-  color: var(--mute);
+  color: var(--night-mute);
 }
 
 @media (max-width: 760px) {

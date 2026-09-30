@@ -1,8 +1,11 @@
 .contact {
   position: relative;
   padding: clamp(96px, 16vh, 180px) var(--gutter) clamp(80px, 12vh, 140px);
-  background: var(--cobalt);
-  color: var(--paper);
+  /* A strong cobalt key light and a warm fill, inside the same dark room. */
+  background:
+    radial-gradient(90% 80% at 80% 20%, rgba(43, 69, 245, 0.55), transparent 62%),
+    radial-gradient(70% 70% at 10% 95%, rgba(222, 120, 52, 0.22), transparent 66%);
+  color: var(--ivory);
 }
 
 .contact__label {

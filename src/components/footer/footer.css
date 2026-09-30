@@ -1,7 +1,8 @@
 .footer {
   position: relative;
   padding: clamp(64px, 10vh, 112px) var(--gutter) 24px;
-  background: var(--ink);
+  /* Same footer, now fading in from the atmosphere instead of a hard edge. */
+  background: linear-gradient(180deg, rgba(10, 11, 15, 0.35) 0, rgba(10, 11, 15, 0.92) 220px, #0b0c10 60%);
   color: var(--paper);
   overflow: clip;
 }

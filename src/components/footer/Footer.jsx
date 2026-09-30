@@ -14,7 +14,7 @@ export default function Footer() {
   const time = useClock();
 
   return (
-    <footer className="footer" data-theme="dark">
+    <footer className="footer" data-theme="dark" data-atmos="contact">
       <div className="footer__top">
         <nav aria-label="Footer" className="footer__col">
           <h2 className="mono">Index</h2>

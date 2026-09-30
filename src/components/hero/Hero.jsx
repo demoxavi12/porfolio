@@ -21,9 +21,9 @@ const byId = Object.fromEntries(projects.map((p) => [p.id, p]));
 // load); depth < 0 sits further away (dimmer, softer). Positions are decided
 // at runtime by the placement engine (layout.js).
 const WINDOWS = [
-  { id: "pulseops", tier: "large", size: 0.34, depth: 0.85 },
-  { id: "eleve", tier: "large", size: 0.29, depth: 0.4 },
-  { id: "chat", tier: "large", size: 0.25, depth: 0.6 },
+  { id: "pulseops", tier: "large", size: 0.41, depth: 0.85 },
+  { id: "eleve", tier: "large", size: 0.35, depth: 0.4 },
+  { id: "chat", tier: "large", size: 0.3, depth: 0.6 },
   { id: "code", tier: "small", size: 0.15, depth: -0.75, url: "routes/events.js", tag: "src", ui: CodeUI },
   { id: "token", tier: "small", size: 0.12, depth: 1, url: "auth · decoded", tag: "jwt", ui: TokenUI },
   { id: "http", tier: "small", size: 0.11, depth: 0.7, url: "gateway · response", tag: "http", ui: HttpUI },
@@ -75,7 +75,8 @@ export default function Hero({ ready }) {
       const rand = seeded(seed);
       // Everything random is drawn from the per-load seed, in a fixed order,
       // so the composition is stable while the visitor interacts or resizes.
-      const rots = WINDOWS.map(() => (rand() < 0.5 ? -1 : 1) * (1.5 + rand() * 5.5));
+      // Project cards tilt gently (a big tilt wastes the space they need); fragments more freely.
+      const rots = WINDOWS.map((c) => (rand() < 0.5 ? -1 : 1) * (c.tier === "large" ? 1 + rand() * 2.5 : 1.5 + rand() * 5.5));
       const sizes = WINDOWS.map(() => 0.88 + rand() * 0.24);
       const speeds = WINDOWS.map(() => 0.65 + rand() * 0.75);
       const phases = WINDOWS.map(() => rand() * Math.PI * 2);
@@ -122,7 +123,7 @@ export default function Hero({ ready }) {
             depth: c.depth,
             rot: rots[i],
             tier: c.tier,
-            minWidth: c.tier === "large" ? Math.max(230, W * 0.16) : Math.max(110, W * 0.075),
+            minWidth: c.tier === "large" ? Math.max(260, W * 0.18) : Math.max(110, W * 0.075),
           };
         });
         const visible = cards.map((c, i) => (shown[i] ? i : -1)).filter((i) => i >= 0);
@@ -383,7 +384,16 @@ export default function Hero({ ready }) {
           z: 0,
         };
 
-        if (hovered === i) {
+        if (hovered === i && WINDOWS[i].tier === "small") {
+          // A fragment under the cursor: a subtle lift, no crowd reaction.
+          const r = rects[i];
+          const lx = (pointer.x - (r.left + r.width / 2)) / r.width;
+          const ly = (pointer.y - (r.top + r.height / 2)) / r.height;
+          target.ry = clamp(lx, -0.6, 0.6) * 6;
+          target.rx = clamp(-ly, -0.6, 0.6) * 5;
+          target.s = 1.05;
+          target.z = 24;
+        } else if (hovered === i) {
           // Focus: forward, larger, tilting toward the cursor.
           const r = rects[i];
           const lx = (pointer.x - (r.left + r.width / 2)) / r.width;
@@ -393,7 +403,7 @@ export default function Hero({ ready }) {
           target.r = rot * 0.3;
           target.s = 1.06;
           target.z = 50;
-        } else if (hc) {
+        } else if (hc && WINDOWS[hovered].tier === "large") {
           // Everyone else steps back and makes a little room.
           const r = rects[i];
           const dx = r.left + r.width / 2 - (hc.left + hc.width / 2);
@@ -422,7 +432,7 @@ export default function Hero({ ready }) {
         // card, it may not enter the protected rects. Push it back out, minimally.
         if (zones.length) {
           const depthScale = PERSPECTIVE / (PERSPECTIVE - Math.max(0, s.z));
-          const { hx, hy } = rotatedHalf(base.w, base.h, s.r + b.r, s.s * home.scale * depthScale * 1.04);
+          const { hx, hy } = rotatedHalf(base.w, base.h, s.r + b.r, s.s * home.scale * depthScale * 1.07);
           const cx = hx0 + s.x + b.x;
           const cy = hy0 + s.y + b.y;
           const { dx, dy } = pushOut({ l: cx - hx, t: cy - hy, r: cx + hx, b: cy + hy }, zones);
@@ -479,6 +489,16 @@ export default function Hero({ ready }) {
     e.currentTarget.classList.remove("is-hover");
     sectionRef.current.classList.remove("has-hover");
   };
+  // Fragments: their own quieter hover — no dimming of the rest, no swap.
+  const enterSmall = (i) => (e) => {
+    if (e.pointerType !== "mouse" || hoverRef.current >= 0) return;
+    hoverRef.current = i;
+    e.currentTarget.classList.add("is-hover-small");
+  };
+  const leaveSmall = (i) => (e) => {
+    if (hoverRef.current === i) hoverRef.current = -1;
+    e.currentTarget.classList.remove("is-hover-small");
+  };
 
   return (
     <section
@@ -486,6 +506,7 @@ export default function Hero({ ready }) {
       ref={sectionRef}
       className={`hero ${ready ? "is-in" : ""} ${live ? "is-live" : ""}`}
       data-theme="dark"
+      data-atmos="hero"
       aria-labelledby="hero-title"
     >
       <div className="hero__atmos" aria-hidden="true" />
@@ -502,7 +523,15 @@ export default function Hero({ ready }) {
           if (!project) {
             const UI = w.ui;
             return (
-              <div key={w.id} className={`hw hw--${w.id} ${layer}`} style={style} data-i={i} aria-hidden="true">
+              <div
+                key={w.id}
+                className={`hw hw--${w.id} ${layer}`}
+                style={style}
+                data-i={i}
+                aria-hidden="true"
+                onPointerEnter={enterSmall(i)}
+                onPointerLeave={leaveSmall(i)}
+              >
                 <div className="hw__inner">
                   <Frame url={w.url} tag={w.tag}>
                     <UI />

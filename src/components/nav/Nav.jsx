@@ -31,7 +31,7 @@ export default function Nav() {
     window.addEventListener("resize", collect);
 
     const themeAt = (y) => {
-      let theme = "light";
+      let theme = "dark";
       for (const el of themed) {
         const r = el.getBoundingClientRect();
         if (r.top <= y && r.bottom > y) theme = el.dataset.theme; // deepest match wins
@@ -94,7 +94,7 @@ export default function Nav() {
 
   return (
     <>
-      <header className={`nav ${open ? "is-open" : ""}`} ref={headerRef} data-theme="light">
+      <header className={`nav ${open ? "is-open" : ""}`} ref={headerRef} data-theme="dark">
         <a href="#top" className="nav__mark" aria-label={`${person.name} — back to top`} onClick={close}>
           <span className="nav__sx" aria-hidden="true">
             SX
@@ -161,7 +161,7 @@ export default function Nav() {
         </div>
       </div>
 
-      <nav className="rail" aria-label="Sections" ref={railRef} data-theme="light">
+      <nav className="rail" aria-label="Sections" ref={railRef} data-theme="dark">
         <ol>
           {sections.map((s, i) => (
             <li key={s.id}>

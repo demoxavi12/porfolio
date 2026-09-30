@@ -1,7 +1,8 @@
 /* ---------- Section head ---------- */
 
 .work {
-  background: var(--paper);
+  background: transparent;
+  color: var(--ivory);
 }
 
 .work__head {
@@ -14,7 +15,7 @@
 
 .work__count {
   grid-column: 1 / -1;
-  color: var(--mute);
+  color: var(--night-mute);
 }
 
 .work__title {
@@ -29,18 +30,34 @@
 
 .work__title .serif {
   font-size: 1.08em;
-  color: var(--cobalt);
+  color: #97a5ff;
 }
 
 .work__intro {
   font-size: clamp(1rem, 1.2vw, 1.15rem);
   line-height: 1.45;
-  color: var(--ink-2);
+  color: var(--night-soft);
 }
 
 /* ---------- Chapter: static composition (mobile + reduced motion) ---------- */
 
 .chapter {
+  --on-accent: var(--ivory);
+  /* Foreground ladder on the dark, colour-lit panel (all ≥ WCAG AA, checked on
+     cobalt, orange and plum light). */
+  --fg-title: #f6f2ea;
+  --fg-sub: #dcd7cc;
+  --fg-body: #d0cbc2;
+  --fg-list: #d6d1c8;
+  --fg-stack: #c6c2b9;
+  --fg-meta: #bcb8af;
+  --fg-rule: rgba(241, 236, 226, 0.16);
+  /* The project's colour as light in a dark room, not as a flat fill. */
+  --flood:
+    radial-gradient(110% 90% at 78% 28%, color-mix(in srgb, var(--accent) 72%, transparent), transparent 62%),
+    radial-gradient(80% 70% at 8% 92%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%),
+    radial-gradient(60% 60% at 40% 50%, rgba(255, 255, 255, 0.03), transparent 70%),
+    #0a0c14;
   position: relative;
   color: var(--on-accent);
 }
@@ -50,7 +67,7 @@
   display: grid;
   gap: 36px;
   padding: 64px var(--gutter) 72px;
-  background: var(--accent);
+  background: var(--flood);
   overflow: hidden;
 }
 
@@ -66,9 +83,25 @@
 }
 
 .chapter__info {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
   display: grid;
   gap: clamp(12px, 2.2vh, 22px);
   max-width: 640px;
+  /* The faintest separation from the light behind — premium, not glowing. */
+  text-shadow: 0 1px 18px rgba(4, 5, 10, 0.55), 0 0 2px rgba(4, 5, 10, 0.35);
+}
+
+/* An almost invisible pool of shade behind the text column only, so a bright
+   colour field can never sit directly behind the words. No hard edges. */
+.chapter__info::before {
+  content: "";
+  position: absolute;
+  inset: -18% -22% -18% -30%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(6, 7, 12, 0.5), rgba(6, 7, 12, 0.22) 60%, transparent);
+  pointer-events: none;
 }
 
 .chapter__info > * {
@@ -89,8 +122,8 @@
   justify-content: space-between;
   gap: 16px;
   padding-bottom: 10px;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 28%, transparent);
-  opacity: 0.8;
+  border-bottom: 1px solid var(--fg-rule);
+  color: var(--fg-meta);
 }
 
 .chapter__title {
@@ -100,6 +133,7 @@
 .chapter__title .display {
   display: block;
   font-size: clamp(3rem, 6.2vw, 7rem);
+  color: var(--fg-title);
 }
 
 .chapter__subtitle {
@@ -107,33 +141,53 @@
   margin-top: 0.25em;
   font-size: clamp(1.35rem, 2vw, 2.1rem);
   line-height: 1.05;
+  color: var(--fg-sub);
 }
 
 .chapter__summary {
   max-width: 46ch;
   font-size: clamp(1rem, 1.15vw, 1.15rem);
   line-height: 1.45;
+  color: var(--fg-body);
 }
 
 .chapter__notes li {
   display: grid;
   grid-template-columns: 34px 1fr;
   padding: clamp(6px, 1vh, 9px) 0;
-  border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-top: 1px solid var(--fg-rule);
   font-size: 0.92rem;
   line-height: 1.35;
+  color: var(--fg-list);
+}
+
+.chapter__notes li:last-child {
+  border-bottom: 1px solid var(--fg-rule);
 }
 
 .chapter__notes .mono {
   padding-top: 2px;
   font-size: 0.66rem;
-  opacity: 0.7;
+  color: var(--fg-meta);
 }
 
 .chapter__stack {
   line-height: 1.7;
-  opacity: 0.85;
   text-transform: none;
+  color: var(--fg-stack);
+}
+
+/* Stacked layout (phones, tablets, reduced motion): the text sits right under
+   the brightest part of the light, so the shade reaches a little further up. */
+@media (max-width: 899px), (prefers-reduced-motion: reduce) {
+  .chapter__info::before {
+    inset: -56px -32px -24px;
+    background: radial-gradient(130% 75% at 35% 18%, rgba(6, 7, 12, 0.62), rgba(6, 7, 12, 0.32) 55%, transparent 82%);
+  }
+}
+
+.chapter__sep {
+  color: color-mix(in srgb, var(--accent) 55%, #ffffff);
 }
 
 .chapter__links {
@@ -143,7 +197,13 @@
 }
 
 .chapter .btn--line {
-  color: var(--on-accent);
+  color: var(--fg-title);
+  box-shadow: inset 0 0 0 1.5px rgba(246, 242, 234, 0.72);
+  text-shadow: none;
+}
+
+.chapter .btn--solid {
+  text-shadow: none;
 }
 
 .chapter .btn--line:hover,
@@ -152,8 +212,8 @@
 }
 
 .btn--solid {
-  background: var(--on-accent);
-  color: var(--accent);
+  background: var(--ivory);
+  color: var(--ink);
 }
 
 .btn--solid:hover,
@@ -200,7 +260,8 @@
     display: block;
     position: absolute;
     inset: 0;
-    background: var(--accent);
+    background: var(--flood);
+    box-shadow: inset 0 0 0 1px rgba(214, 224, 255, 0.08);
     clip-path: inset(
       calc((1 - var(--open, 0)) * 23%) calc((1 - var(--open, 0)) * 31%) round calc((1 - var(--open, 0)) * 18px)
     );
@@ -218,7 +279,7 @@
     line-height: 0.8;
     white-space: nowrap;
     color: transparent;
-    -webkit-text-stroke: 1.5px var(--ink);
+    -webkit-text-stroke: 1.2px rgba(241, 236, 226, 0.22);
     transform: translate3d(calc(34vw - var(--p, 0) * 125vw), -50%, 0);
     pointer-events: none;
     will-change: transform;
@@ -243,8 +304,9 @@
 
   .chapter__window .frame {
     box-shadow:
-      0 0 0 1px rgba(20, 18, 15, 0.12),
-      0 50px 100px -30px rgba(0, 0, 0, 0.55);
+      0 0 0 1px rgba(214, 224, 255, 0.1),
+      0 50px 100px -30px rgba(0, 0, 0, 0.7),
+      0 40px 200px -40px color-mix(in srgb, var(--accent) 70%, transparent);
   }
 
   .chapter__info {

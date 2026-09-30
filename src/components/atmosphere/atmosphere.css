@@ -1,0 +1,169 @@
+/* ==========================================================================
+   Atmosphere — light passing through smoke.
+   A near-black base with four very large colour fields: cool, violet, warm,
+   and a faint magenta. Each section sets a mood; the fields cross-fade.
+   ========================================================================== */
+
+@property --at-1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --at-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --at-3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --at-4 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --at-base {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #07090f;
+}
+
+:root {
+  /* hero: deep navy · violet · warm amber */
+  --at-base: #070910;
+  --at-1: rgba(44, 66, 190, 0.5);
+  --at-2: rgba(104, 64, 176, 0.32);
+  --at-3: rgba(196, 112, 54, 0.22);
+  --at-4: rgba(150, 48, 112, 0.1);
+  transition:
+    --at-base 1.8s ease,
+    --at-1 1.8s ease,
+    --at-2 1.8s ease,
+    --at-3 1.8s ease,
+    --at-4 1.8s ease;
+}
+
+/* projects: deep charcoal · cobalt · muted orange */
+:root[data-atmos="work"] {
+  --at-base: #08090d;
+  --at-1: rgba(43, 69, 245, 0.34);
+  --at-2: rgba(58, 64, 88, 0.4);
+  --at-3: rgba(206, 104, 44, 0.2);
+  --at-4: rgba(104, 64, 176, 0.1);
+}
+
+/* about: deep blue · muted red-violet · soft warm light */
+:root[data-atmos="about"] {
+  --at-base: #070a14;
+  --at-1: rgba(32, 62, 168, 0.4);
+  --at-2: rgba(150, 46, 96, 0.28);
+  --at-3: rgba(226, 156, 96, 0.16);
+  --at-4: rgba(90, 60, 170, 0.12);
+}
+
+/* skills: dark neutral · cool blue · a whisper of accent */
+:root[data-atmos="stack"] {
+  --at-base: #08090c;
+  --at-1: rgba(40, 84, 170, 0.28);
+  --at-2: rgba(70, 72, 90, 0.3);
+  --at-3: rgba(170, 196, 70, 0.07);
+  --at-4: rgba(110, 70, 170, 0.1);
+}
+
+/* record: deep teal-blue · plum · amber */
+:root[data-atmos="record"] {
+  --at-base: #080a10;
+  --at-1: rgba(30, 86, 124, 0.3);
+  --at-2: rgba(118, 34, 76, 0.34);
+  --at-3: rgba(206, 132, 64, 0.16);
+  --at-4: rgba(60, 60, 150, 0.12);
+}
+
+/* contact: the room lights up for the ending */
+:root[data-atmos="contact"] {
+  --at-base: #06080f;
+  --at-1: rgba(43, 69, 245, 0.62);
+  --at-2: rgba(112, 80, 220, 0.34);
+  --at-3: rgba(222, 120, 52, 0.3);
+  --at-4: rgba(170, 52, 120, 0.16);
+}
+
+.atmos {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(90% 70% at 84% 12%, var(--at-1), transparent 62%),
+    radial-gradient(70% 80% at 6% 64%, var(--at-2), transparent 64%),
+    var(--at-base);
+  overflow: hidden;
+}
+
+/* Two slow-drifting fields — warm low right, magenta high left. The drift is
+   so slow it registers as the room breathing, not as motion. */
+.atmos::before,
+.atmos::after {
+  content: "";
+  position: absolute;
+  width: 110vmax;
+  height: 110vmax;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.atmos::before {
+  right: -40vmax;
+  bottom: -52vmax;
+  background: radial-gradient(closest-side, var(--at-3), transparent 72%);
+  animation: atmos-drift 70s ease-in-out infinite alternate;
+}
+
+.atmos::after {
+  left: -30vmax;
+  top: -48vmax;
+  background: radial-gradient(closest-side, var(--at-4), transparent 70%);
+  animation: atmos-drift 90s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes atmos-drift {
+  to {
+    transform: translate3d(-9vmax, -6vmax, 0) scale(1.1);
+  }
+}
+
+/* Grain over everything: softens the gradients so they read as haze. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+@media (max-width: 760px) {
+  /* Phones: fewer moving layers. */
+  .atmos::after {
+    display: none;
+  }
+
+  .atmos::before {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmos::before,
+  .atmos::after {
+    animation: none;
+  }
+}

@@ -16,6 +16,15 @@
     />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Dark from the first paint (no white before the CSS arrives), and every
+         full load starts at the top: the browser must not restore an old scroll. -->
+    <style>
+      html { background: #07090f; }
+    </style>
+    <script>
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+      window.scrollTo(0, 0);
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

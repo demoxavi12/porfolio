@@ -31,7 +31,14 @@
   --gutter: clamp(16px, 4vw, 56px);
   --radius: 10px;
 
-  color-scheme: light;
+  /* Night system: text levels on the dark atmosphere */
+  --ivory: #f1ece2;
+  --night-soft: #c3c6d3;
+  --night-mute: #8a90a6;
+  --night-line: rgba(214, 224, 255, 0.1);
+  --night-line-strong: rgba(214, 224, 255, 0.22);
+
+  color-scheme: dark;
 }
 
 *,
@@ -51,9 +58,13 @@ html.is-locked {
   overflow: hidden;
 }
 
+html {
+  background: #07090f;
+}
+
 body {
-  background: var(--paper);
-  color: var(--ink);
+  background: transparent;
+  color: var(--ivory);
   font-family: var(--f-display);
   font-size: 1rem;
   line-height: 1.5;
@@ -93,7 +104,7 @@ ol {
 }
 
 :focus-visible {
-  outline: 2px solid var(--cobalt);
+  outline: 2px solid var(--lime);
   outline-offset: 4px;
   border-radius: 2px;
 }

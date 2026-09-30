@@ -12,7 +12,7 @@
 
 .intro.is-leaving {
   clip-path: inset(0 0 100% 0);
-  transition: clip-path 0.9s var(--ease-in-out);
+  transition: clip-path 0.7s var(--ease-in-out);
 }
 
 /* Camera push as the panel lifts */
@@ -20,8 +20,8 @@
   transform: scale(1.25) translateY(-6%);
   filter: blur(6px);
   transition:
-    transform 0.9s var(--ease-in-out),
-    filter 0.9s var(--ease-in-out);
+    transform 0.7s var(--ease-in-out),
+    filter 0.7s var(--ease-in-out);
 }
 
 /* ---- words ---- */
@@ -38,8 +38,8 @@
   grid-area: 1 / 1;
   font-size: clamp(4.5rem, 23vw, 24rem);
   line-height: 0.85;
-  animation: intro-word-out 0.55s var(--ease-in-out) both;
-  animation-delay: calc(var(--start) + 0.8s);
+  animation: intro-word-out 0.45s var(--ease-in-out) both;
+  animation-delay: calc(var(--start) + 0.55s);
 }
 
 .intro__word--2 {
@@ -58,7 +58,7 @@
 .intro .chars__c {
   transform: none;
   transition: none;
-  animation: intro-char 0.75s var(--ease-out) both;
+  animation: intro-char 0.6s var(--ease-out) both;
   animation-delay: calc(var(--start) + var(--d));
 }
 
@@ -205,7 +205,7 @@
   height: 100%;
   background: var(--paper);
   transform-origin: left;
-  animation: intro-bar 3.5s linear both;
+  animation: intro-bar 2.35s linear both;
 }
 
 @keyframes intro-bar {

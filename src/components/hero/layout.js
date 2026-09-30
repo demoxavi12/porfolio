@@ -91,8 +91,8 @@ export function pushOut(box, zones) {
 export function envelope(card) {
   const d = Math.abs(card.depth);
   return {
-    ex: 11 + 24 * d + 8 + card.w * 0.05,
-    ey: 8 + 10 * d + 8 + card.h * 0.05,
+    ex: 11 + 24 * d + 8 + card.w * 0.025,
+    ey: 8 + 10 * d + 8 + card.h * 0.025,
   };
 }
 
@@ -106,7 +106,7 @@ export function clearOf(card, cx, cy, zones, bounds) {
   const { hx, hy } = rotatedHalf(card.w, card.h, card.rot);
   const { ex, ey } = envelope(card);
   const rest = { l: cx - hx, t: cy - hy, r: cx + hx, b: cy + hy };
-  const bleed = card.w * (card.tier === "large" ? 0.2 : 0.14); // may drift partly off the side edges
+  const bleed = card.w * (card.tier === "large" ? 0.3 : 0.14); // may drift partly off the side edges
   const inBounds =
     rest.l >= bounds.l - bleed && rest.r <= bounds.r + bleed && rest.t - ey >= bounds.t && rest.b + ey <= bounds.b;
   const reach = expand(rest, ex, ey);
@@ -145,12 +145,14 @@ export function placeCards({ cards, bounds, zones, rand, samples = 110 }) {
   const tryBand = (card, band) => {
     let best = null;
     if (band.b - band.t < 60) return null;
-    for (let n = 0; n < samples; n++) {
+    // Project cards search much harder for the spot where they can be largest.
+    const tries = card.tier === "large" ? samples * 4 : samples;
+    for (let n = 0; n < tries; n++) {
       const cx = bounds.l + rand() * (bounds.r - bounds.l);
       const cy = band.t + rand() * (band.b - band.t);
       let hit = null;
       let w = card.w;
-      for (; w >= card.minWidth && !hit; w *= 0.9) {
+      for (; w >= card.minWidth && !hit; w *= card.tier === "large" ? 0.95 : 0.9) {
         const rest = clearOf({ ...card, w, h: w * (card.h / card.w) }, cx, cy, zones, bounds);
         if (rest) hit = { rest, w: w, h: w * (card.h / card.w) };
       }
@@ -159,7 +161,8 @@ export function placeCards({ cards, bounds, zones, rand, samples = 110 }) {
       let score = (1 - hit.w / card.w) * (card.tier === "large" ? 4 : 1) + rand() * 0.8;
       for (const other of placed) {
         const o = overlap(hit.rest, other.rect) / Math.min(area(hit.rest), area(other.rect));
-        const limit = card.tier === "small" && other.tier === "large" ? 0.5 : 0.4;
+        // Project cards may stack deeply on each other (depth); nothing may touch the name.
+        const limit = card.tier === "large" && other.tier === "large" ? 0.6 : card.tier === "small" && other.tier === "large" ? 0.5 : 0.45;
         score += o > limit ? 5 + o * 10 : o * -0.7; // some overlap gives depth; a pile-up hides the work
         score += 1.2 / (1 + Math.hypot(cx - other.cx, cy - other.cy) / 200);
       }
@@ -185,7 +188,13 @@ export function placeCards({ cards, bounds, zones, rand, samples = 110 }) {
     const card = cards[i];
     const first = preferUpper ? bands[0] : bands[1];
     const other = preferUpper ? bands[1] : bands[0];
-    const best = tryBand(card, first) ?? tryBand(card, other);
+    let best = tryBand(card, first) ?? tryBand(card, other);
+    // A project card never sits a layout out: it steps down in size instead.
+    for (const floor of card.tier === "large" ? [0.82, 0.66] : []) {
+      if (best) break;
+      const smaller = { ...card, minWidth: card.minWidth * floor };
+      best = tryBand(smaller, first) ?? tryBand(smaller, other);
+    }
     if (!best) return;
     placed.push({ rect: best.rest, cx: best.cx, cy: best.cy, tier: card.tier });
     out[i] = { left: best.cx - best.w / 2, top: best.cy - best.h / 2, width: best.w, height: best.h };

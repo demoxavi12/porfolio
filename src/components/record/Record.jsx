@@ -54,7 +54,7 @@ export default function Record() {
   }, [reduced]);
 
   return (
-    <section id="record" className="record" data-theme="light" aria-labelledby="record-title">
+    <section id="record" className="record" data-theme="dark" data-atmos="record" aria-labelledby="record-title">
       <header className="record__head">
         <p className="mono record__label">04 / 05 — Record</p>
         <h2 id="record-title" className="record__title">

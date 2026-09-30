@@ -38,7 +38,7 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" ref={sectionRef} className="contact" data-theme="dark" aria-labelledby="contact-title">
+    <section id="contact" ref={sectionRef} className="contact" data-theme="dark" data-atmos="contact" aria-labelledby="contact-title">
       <p className="mono contact__label">05 / 05 — Contact</p>
 
       <h2
