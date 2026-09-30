@@ -1,14 +1,16 @@
 import { useEffect, useRef } from "react";
 import { onFrame } from "../../lib/loop";
 import { pointer } from "../../lib/pointer";
+import { expand, unionRect, zoneMargin } from "./layout";
 
 /**
  * The hidden signature: a football that plays through the hero.
  *
  * Lightweight physics (gravity, drag, restitution, rolling friction, spin
- * from velocity). The letters of the name are solid obstacles, so the ball
- * can never sit on top of them. Front project cards are obstacles too, and
- * each contact is reported through onHit so the card can react.
+ * from velocity). The name's protected zone — the same one the cards obey —
+ * is a deflector the ball glances off and never rests on, so it can never
+ * cross the letters. Front project cards are solid too, and each contact is
+ * reported through onHit so the card can react.
  *
  * One pass shortly after the hero settles, then at most two different,
  * quieter passes much later — never the same replay on a loop.
@@ -16,10 +18,10 @@ import { pointer } from "../../lib/pointer";
 
 // Launch profiles, in units of stage width (w) / height (h) per frame at 60fps.
 const DESKTOP_PASSES = [
-  // Lofted in from the top right, aimed to drop onto the PulseOps card; from
-  // there physics takes it — usually a skip along the top of the name.
-  { x: 1.01, y: 0.12, aim: ".hw--pulseops .frame", along: 0.7, frames: 30 },
-  // A driven ground pass from the left, under the name.
+  // Lofted in from the nearer side, aimed to drop onto the PulseOps card
+  // wherever this load placed it; physics takes it from there.
+  { x: 1.01, y: 0.14, aim: ".hw--pulseops .frame", along: 0.6 },
+  // A driven ground pass from the left, along the touchline.
   { x: -0.03, y: 0.9, vx: 0.0058, vy: -0.004 },
   // Chipped in from the right, low.
   { x: 1.03, y: 0.82, vx: -0.0052, vy: -0.011 },
@@ -60,15 +62,14 @@ export default function Ball({ stageRef, ready, onHit }) {
     let lastHit = new Map(); // card -> timestamp, so one contact = one reaction
 
     const gravity = () => H * 0.00062;
-    let capInset = 0;
+    let margin = 24;
     const size = () => {
       W = stage.clientWidth;
       H = stage.clientHeight;
       canvas.width = W * dpr;
       canvas.height = H * dpr;
       s.r = Math.max(12, Math.min(W * 0.0135, 21));
-      const row = stage.querySelector(".hero__row--1");
-      capInset = row ? parseFloat(getComputedStyle(row).fontSize) * 0.065 : 0;
+      margin = zoneMargin(W);
       ball.style.width = ball.style.height = `${s.r * 2}px`;
       shadow.style.setProperty("--ball-d", `${s.r * 2}px`);
     };
@@ -78,16 +79,18 @@ export default function Ball({ stageRef, ready, onHit }) {
     const launch = (profile) => {
       let vx = (profile.vx ?? -0.006) * W;
       let vy = (profile.vy ?? 0) * H;
-      const x = profile.x * W + (profile.x > 1 ? s.r * 2 : 0);
+      let x = profile.x * W + (profile.x > 1 ? s.r * 2 : 0);
       const y = profile.y * H;
       const target = profile.aim && stage.querySelector(profile.aim);
       if (target && target.offsetParent) {
-        // Solve the projectile so it lands on the target's top edge in `frames`.
+        // Enter from the side nearer the card, then solve the projectile so
+        // it lands on the card's top edge.
         const origin = stage.getBoundingClientRect();
         const r = target.getBoundingClientRect();
         const tx = r.left - origin.left + r.width * profile.along;
         const ty = r.top - origin.top - s.r;
-        const T = profile.frames;
+        x = tx > W / 2 ? W + s.r * 2 : -s.r * 2;
+        const T = Math.min(70, Math.max(28, Math.abs(tx - x) / 11));
         vx = (tx - x) / T;
         vy = (ty - y - 0.5 * gravity() * T * T) / T;
       }
@@ -134,7 +137,8 @@ export default function Ball({ stageRef, ready, onHit }) {
     };
     ball.addEventListener("pointerdown", kick);
 
-    // Name letters: solid. Only front cards collide — back cards are "further away".
+    // The protected identity zone deflects; front cards are solid. Back cards
+    // are "further away", so the ball passes in front of them.
     const collect = () => {
       const origin = stage.getBoundingClientRect();
       const local = (el, pad = 0) => {
@@ -146,18 +150,15 @@ export default function Ball({ stageRef, ready, onHit }) {
           b: r.bottom - origin.top + pad,
         };
       };
-      // Letter boxes include line-height above the capitals; trim it so the
-      // ball rolls on the cap line rather than floating above it.
-      const name = [
-        [stage.querySelector(".hero__row--1 .chars"), capInset],
-        [stage.querySelector(".hero__xavier .chars"), 0],
-        [stage.querySelector(".hero__suna"), 0],
-      ]
-        .filter(([el]) => el)
-        .map(([el, inset]) => {
-          const box = local(el, 3);
-          return { ...box, t: box.t + inset, kind: "name" };
-        });
+      const letters = unionRect(
+        [
+          stage.querySelector(".hero__row--1 .chars"),
+          stage.querySelector(".hero__xavier .chars"),
+          stage.querySelector(".hero__suna"),
+        ],
+        origin
+      );
+      const name = letters ? [{ ...expand(letters, margin), kind: "zone" }] : [];
       const cards = [...stage.querySelectorAll(".hw.is-front")]
         .filter((el) => el.offsetParent)
         .map((el) => ({ ...local(el.querySelector(".frame")), kind: "card", i: Number(el.dataset.i) }));
@@ -191,11 +192,14 @@ export default function Ball({ stageRef, ready, onHit }) {
         s.y = cy + ny * s.r;
       }
 
-      if (ny < -0.6) s.supported = true; // resting on a top surface
+      if (ny < -0.6) {
+        if (box.kind === "zone") s.onZone = true;
+        else s.supported = true; // resting on a card's top
+      }
       const vn = s.vx * nx + s.vy * ny;
       if (vn >= 0) return;
       const impact = vn < -1;
-      const e = impact ? (box.kind === "name" ? 0.52 : 0.6) : 0; // resting contact doesn't bounce
+      const e = box.kind === "zone" ? 0.72 : impact ? 0.6 : 0; // the zone is springy; cards absorb
       s.vx -= (1 + e) * vn * nx;
       s.vy -= (1 + e) * vn * ny;
       const tx = -ny;
@@ -284,6 +288,7 @@ export default function Ball({ stageRef, ready, onHit }) {
         // The stage floor is the touchline: bounce, then roll.
         s.grounded = false;
         s.supported = false;
+        s.onZone = false;
         if (s.y > floor) {
           s.y = floor;
           if (s.vy > 1.4) {
@@ -302,6 +307,12 @@ export default function Ball({ stageRef, ready, onHit }) {
         // keeps rolling the way it was going and drops off the edge.
         if (s.supported && Math.abs(s.vx) < 1.4) {
           s.vx += (Math.sign(s.vx) || -1) * 0.09 * h;
+          s.spin = s.vx / s.r;
+        }
+        // The zone above the name is never somewhere to rest: it sheds the
+        // ball quickly off whichever end it's heading for.
+        if (s.onZone) {
+          s.vx += (Math.sign(s.vx) || -1) * 0.34 * h;
           s.spin = s.vx / s.r;
         }
       }

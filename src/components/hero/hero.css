@@ -15,6 +15,8 @@
   flex: 1;
   min-height: max(560px, 76svh);
   perspective: 1400px;
+  /* The name's size. Card positions are computed at runtime around it (layout.js). */
+  --fs: clamp(4.2rem, min(14.5vw, 28svh), 19rem);
 }
 
 .hero__reg {
@@ -39,14 +41,17 @@
 
 /* ---------- floating windows ---------- */
 
+/* left / top / width are set by the placement engine; this is only the
+   pre-measurement fallback (cards are invisible until the hero is ready). */
 .hw {
   position: absolute;
-  left: var(--dx);
-  top: var(--dy);
-  width: var(--dw);
+  left: 60%;
+  top: 20%;
+  width: 22vw;
   z-index: 3;
   opacity: 0;
-  transform: translateY(80px) scale(0.9);
+  /* Entrance scales in place — no travel that could cross the name. */
+  transform: scale(0.9);
   transition:
     opacity 1s var(--ease-out),
     transform 1.4s var(--ease-out);
@@ -56,6 +61,10 @@
 .hero.is-in .hw {
   opacity: 1;
   transform: none;
+}
+
+.hw.is-benched {
+  display: none;
 }
 
 .hw.is-back {
@@ -137,10 +146,10 @@
 
 .hero__title {
   position: absolute;
-  top: 15%;
+  top: 14%;
   left: var(--gutter);
-  right: var(--gutter);
-  z-index: 2;
+  /* Always the top layer — cards and the ball pass behind the name, never over it. */
+  z-index: 8;
   pointer-events: none;
   font-weight: inherit;
 }
@@ -151,26 +160,27 @@
 }
 
 .hero__row--1 {
-  font-size: clamp(4.6rem, min(20.5vw, 34svh), 25rem);
+  font-size: var(--fs);
 }
 
+/* Xavier tucks in under SWARAJ, with SUNA stamped at its shoulder. */
 .hero__row--2 {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-end;
-  gap: 1.6vw;
-  margin-top: -0.6vw;
+  gap: calc(var(--fs) * 0.1);
+  margin-top: calc(var(--fs) * -0.02);
+  padding-left: calc(var(--fs) * 0.52);
 }
 
 .hero__xavier {
-  font-size: clamp(4.6rem, min(19vw, 32svh), 23rem);
+  font-size: calc(var(--fs) * 0.96);
   line-height: 0.86;
 }
 
 .hero__suna {
-  margin-top: 2.2vw;
+  margin-top: calc(var(--fs) * 0.14);
   padding: 0.12em 0.14em 0.02em;
-  font-size: clamp(1.6rem, min(5.2vw, 9svh), 6.5rem);
+  font-size: calc(var(--fs) * 0.27);
   line-height: 0.9;
   letter-spacing: -0.02em;
   background: var(--tangerine);
@@ -281,8 +291,22 @@
   }
 }
 
+/* Portrait tablets and phones: the name on top, the work below it. */
+@media (max-width: 1024px) and (orientation: portrait), (max-width: 760px) {
+  .hero__stage {
+    --fs: 19vw;
+    min-height: 620px;
+    height: 74svh;
+  }
+
+  .hero__title {
+    top: 12%;
+  }
+}
+
 @media (max-width: 760px) {
   .hero__stage {
+    --fs: 22.5vw;
     min-height: 560px;
     height: 72svh;
   }
@@ -291,17 +315,8 @@
     top: 13%;
   }
 
-  .hero__row--1 {
-    font-size: 23.5vw;
-  }
-
-  .hero__xavier {
-    font-size: 22vw;
-  }
-
-  .hero__suna {
-    font-size: 7.4vw;
-    margin-top: 3vw;
+  .hero__row--2 {
+    padding-left: calc(var(--fs) * 0.3);
   }
 
   .hw--code,
@@ -309,22 +324,23 @@
     display: none;
   }
 
+  /* Phones: a fixed, offset cascade below the name (the engine stays out of it). */
   .hw--pulseops {
-    left: 36%;
-    top: 50%;
-    width: 62vw;
+    left: 34%;
+    top: 49%;
+    width: 60vw;
   }
 
   .hw--chat {
-    left: -6%;
-    top: 64%;
-    width: 50vw;
+    left: -5%;
+    top: 62%;
+    width: 48vw;
   }
 
   .hw--eleve {
-    left: 62%;
-    top: 74%;
-    width: 44vw;
+    left: 60%;
+    top: 75%;
+    width: 42vw;
   }
 
   .hw.is-back .hw__inner {
