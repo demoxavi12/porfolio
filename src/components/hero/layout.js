@@ -51,7 +51,7 @@ export function rotatedHalf(w, h, deg, s = 1) {
  * Smallest translation that moves `box` fully outside `zone`
  * (returns {dx:0, dy:0} if they don't intersect).
  */
-export function pushOut(box, zone) {
+function pushOutOne(box, zone) {
   if (!intersects(box, zone)) return { dx: 0, dy: 0 };
   const options = [
     { dx: zone.l - box.r, dy: 0 },
@@ -62,103 +62,136 @@ export function pushOut(box, zone) {
   return options.sort((a, b) => Math.abs(a.dx + a.dy) - Math.abs(b.dx + b.dy))[0];
 }
 
+/** Push `box` out of every protected rect (a few passes settle neighbours). */
+export function pushOut(box, zones) {
+  let dx = 0;
+  let dy = 0;
+  for (let pass = 0; pass < 4; pass++) {
+    let moved = false;
+    for (const z of zones) {
+      const shifted = { l: box.l + dx, t: box.t + dy, r: box.r + dx, b: box.b + dy };
+      const m = pushOutOne(shifted, z);
+      if (m.dx || m.dy) {
+        dx += m.dx;
+        dy += m.dy;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return { dx, dy };
+}
+
 /**
- * Motion envelope for a card: how far idle float, pointer parallax, ball
- * bumps and hover scale can carry it from its resting place.
+ * Motion envelope for a card: how far idle float (≈ ±11 / ±8 px), pointer
+ * parallax (24 / 10 px × depth), ball bumps and a hover scale can carry
+ * it from its resting place. Placement keeps this whole envelope off the
+ * name; the per-frame guard covers anything beyond it (hover lift, swaps).
  */
 export function envelope(card) {
   const d = Math.abs(card.depth);
   return {
-    ex: 14 + 38 * d + 12 + card.w * 0.05,
-    ey: 18 + 26 * d + 12 + card.h * 0.05,
+    ex: 11 + 24 * d + 8 + card.w * 0.05,
+    ey: 8 + 10 * d + 8 + card.h * 0.05,
   };
 }
 
 /**
- * The free space around the protected zone, cut into regions: right of the
- * name (top / middle / bottom), below it (left / centre), and above / left of
- * it when there's room. The zone itself is never a region.
+ * Can a card of this size rest with its centre at (cx, cy)? True when its
+ * whole motion envelope clears every protected rect and it stays in bounds
+ * (a little bleed off the side edges is allowed). Used by placement and by
+ * the hover swap before it moves a card anywhere.
  */
-export function regions(bounds, zone) {
-  const cells = [];
-  const add = (l, t, r, b, name) => {
-    if (r - l > 60 && b - t > 50) cells.push({ l, t, r, b, name, used: 0 });
-  };
-  const right = Math.min(bounds.r, Math.max(zone.r, bounds.l));
-  const thirds = (bounds.b - bounds.t) / 3;
-  add(right, bounds.t, bounds.r, bounds.t + thirds, "right-top");
-  add(right, bounds.t + thirds, bounds.r, bounds.t + thirds * 2, "right-middle");
-  add(right, bounds.t + thirds * 2, bounds.r, bounds.b, "right-bottom");
-  const below = Math.max(zone.b, bounds.t);
-  const mid = (bounds.l + right) / 2;
-  add(bounds.l, below, mid, bounds.b, "below-left");
-  add(mid, below, right, bounds.b, "below-centre");
-  add(bounds.l, bounds.t, right, Math.min(zone.t, bounds.b), "above");
-  add(bounds.l, bounds.t, Math.max(zone.l, bounds.l), bounds.b, "left");
-  return cells;
+export function clearOf(card, cx, cy, zones, bounds) {
+  const { hx, hy } = rotatedHalf(card.w, card.h, card.rot);
+  const { ex, ey } = envelope(card);
+  const rest = { l: cx - hx, t: cy - hy, r: cx + hx, b: cy + hy };
+  const bleed = card.w * (card.tier === "large" ? 0.2 : 0.14); // may drift partly off the side edges
+  const inBounds =
+    rest.l >= bounds.l - bleed && rest.r <= bounds.r + bleed && rest.t - ey >= bounds.t && rest.b + ey <= bounds.b;
+  const reach = expand(rest, ex, ey);
+  return inBounds && !zones.some((z) => intersects(reach, z)) ? rest : null;
 }
 
 /**
- * Controlled-random placement.
+ * Controlled-random placement above and below the name.
  *
- * cards: [{ w, h, depth, rot }] — measured sizes (h/w is the card's real aspect).
- * bounds: { l, t, r, b } — where cards may live (under the nav, above the floor).
- * zone: protected identity rect (already includes the safety margin).
+ * cards: [{ w, h, depth, rot, tier, minWidth }] — measured sizes (h/w is the
+ *   card's real aspect). tier "large" = project cards, "small" = technical
+ *   fragments.
+ * bounds: { l, t, r, b } — the stage area cards may use (under the nav, above the floor).
+ * zones: the protected rects — SWARAJ, Xavier and SUNA, each measured and
+ *   grown by a safety margin. Their pockets (e.g. right of SWARAJ, above
+ *   Xavier) are free space; the words themselves never are.
  *
- * Each card draws a region (unused regions first), picks a random spot in it,
- * and shrinks — within limits — until its whole motion envelope clears the
- * zone and stays in bounds. Candidates are scored for spread and for staying
- * close to their intended size; the best wins. Cards may overlap each other
- * a little; they may never touch the zone. A card that can't fit anywhere
- * sits this layout out.
+ * Large cards place first, dealt at random between the upper and lower band;
+ * small fragments then fill in around them. Each card samples random spots
+ * across its band and shrinks, within its tier's limits, until its whole
+ * motion envelope clears the zones. Spread and a little overlap are
+ * rewarded; pile-ups are not. A card that fits nowhere sits the layout out —
+ * it never touches the name.
  */
-export function placeCards({ cards, bounds, zone, rand, minWidth = 130, samples = 80 }) {
-  const cells = regions(bounds, zone);
-  const placed = [];
+export function placeCards({ cards, bounds, zones, rand, samples = 110 }) {
+  const top = Math.min(...zones.map((z) => z.t));
+  const bottom = Math.max(...zones.map((z) => z.b));
+  const mid = (top + bottom) / 2;
+  const bands = [
+    { t: bounds.t, b: mid },
+    { t: mid, b: bounds.b },
+  ];
   const out = cards.map(() => null);
-  if (!cells.length) return out;
+  const placed = [];
 
-  const pickCell = () => {
-    const weights = cells.map((c) => (1 / (1 + c.used * 4)) * Math.pow((c.r - c.l) * (c.b - c.t), 0.35));
-    let x = rand() * weights.reduce((a, b) => a + b, 0);
-    for (let i = 0; i < cells.length; i++) if ((x -= weights[i]) <= 0) return cells[i];
-    return cells[cells.length - 1];
-  };
-
-  const fits = (card, cx, cy, w) => {
-    const h = w * (card.h / card.w);
-    const { hx, hy } = rotatedHalf(w, h, card.rot);
-    const { ex, ey } = envelope({ ...card, w, h });
-    const rest = { l: cx - hx, t: cy - hy, r: cx + hx, b: cy + hy };
-    const bleed = w * 0.1; // a little bleed off the side edges reads as scattered, not boxed
-    const inBounds =
-      rest.l >= bounds.l - bleed && rest.r <= bounds.r + bleed && rest.t - ey * 0.5 >= bounds.t && rest.b + ey * 0.5 <= bounds.b;
-    return inBounds && !intersects(expand(rest, ex, ey), zone) ? { rest, w, h } : null;
-  };
-
-  cards.forEach((card, i) => {
+  const tryBand = (card, band) => {
     let best = null;
+    if (band.b - band.t < 60) return null;
     for (let n = 0; n < samples; n++) {
-      const cell = pickCell();
-      const cx = cell.l + rand() * (cell.r - cell.l);
-      const cy = cell.t + rand() * (cell.b - cell.t);
+      const cx = bounds.l + rand() * (bounds.r - bounds.l);
+      const cy = band.t + rand() * (band.b - band.t);
       let hit = null;
-      for (let w = card.w; w >= minWidth && !hit; w *= 0.9) hit = fits(card, cx, cy, w);
+      let w = card.w;
+      for (; w >= card.minWidth && !hit; w *= 0.9) {
+        const rest = clearOf({ ...card, w, h: w * (card.h / card.w) }, cx, cy, zones, bounds);
+        if (rest) hit = { rest, w: w, h: w * (card.h / card.w) };
+      }
       if (!hit) continue;
-
-      let score = cell.used * 2.2 + (1 - hit.w / card.w) * 1.6 + rand() * 0.7;
+      // Large cards strongly prefer their full size; fragments shrink more freely.
+      let score = (1 - hit.w / card.w) * (card.tier === "large" ? 4 : 1) + rand() * 0.8;
       for (const other of placed) {
         const o = overlap(hit.rest, other.rect) / Math.min(area(hit.rest), area(other.rect));
-        score += o > 0.3 ? 5 + o * 10 : o * -0.6; // a kiss of overlap is good, a pile-up isn't
-        score += 1.4 / (1 + Math.hypot(cx - other.cx, cy - other.cy) / 180);
+        const limit = card.tier === "small" && other.tier === "large" ? 0.5 : 0.4;
+        score += o > limit ? 5 + o * 10 : o * -0.7; // some overlap gives depth; a pile-up hides the work
+        score += 1.2 / (1 + Math.hypot(cx - other.cx, cy - other.cy) / 200);
       }
-      if (!best || score < best.score) best = { score, cx, cy, cell, ...hit };
+      if (!best || score < best.score) best = { score, cx, cy, ...hit };
     }
-    if (!best) return;
-    best.cell.used += 1;
-    placed.push({ rect: best.rest, cx: best.cx, cy: best.cy });
-    out[i] = { left: best.cx - best.w / 2, top: best.cy - best.h / 2, width: best.w, height: best.h };
-  });
+    return best;
+  };
 
+  const shuffle = (list) => {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  };
+
+  const large = shuffle(cards.map((c, i) => i).filter((i) => cards[i].tier === "large"));
+  const small = shuffle(cards.map((c, i) => i).filter((i) => cards[i].tier !== "large"));
+  // Large cards: a random split between the bands (never all on one side).
+  const upperLarge = Math.max(1, Math.min(large.length - 1, Math.round(large.length / 2 + (rand() - 0.5))));
+
+  const place = (i, preferUpper) => {
+    const card = cards[i];
+    const first = preferUpper ? bands[0] : bands[1];
+    const other = preferUpper ? bands[1] : bands[0];
+    const best = tryBand(card, first) ?? tryBand(card, other);
+    if (!best) return;
+    placed.push({ rect: best.rest, cx: best.cx, cy: best.cy, tier: card.tier });
+    out[i] = { left: best.cx - best.w / 2, top: best.cy - best.h / 2, width: best.w, height: best.h };
+  };
+
+  large.forEach((i, k) => place(i, k < upperLarge));
+  small.forEach((i) => place(i, rand() < 0.5));
   return out;
 }

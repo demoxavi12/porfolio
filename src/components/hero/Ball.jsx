@@ -7,39 +7,37 @@ import { expand, unionRect, zoneMargin } from "./layout";
  * The hidden signature: a football that plays through the hero.
  *
  * Lightweight physics (gravity, drag, restitution, rolling friction, spin
- * from velocity). The name's protected zone — the same one the cards obey —
- * is a deflector the ball glances off and never rests on, so it can never
- * cross the letters. Front project cards are solid too, and each contact is
- * reported through onHit so the card can react.
+ * from velocity, a touch of curl). The name's protected rects — the same
+ * ones the cards obey — deflect the ball and are never somewhere it can
+ * rest, so it can never cross the letters. Front project cards are solid;
+ * each contact is reported through onHit so the card can react.
  *
- * One pass shortly after the hero settles, then at most two different,
- * quieter passes much later — never the same replay on a loop.
+ * Lifecycle, tied to the hero's visibility:
+ *   idle → entering → active → exiting → idle
+ * First visit: a lob onto the PulseOps card. Leave the hero: reset.
+ * Come back: the ball rises from the bottom in one of three sequences.
  */
 
 // Launch profiles, in units of stage width (w) / height (h) per frame at 60fps.
-const DESKTOP_PASSES = [
-  // Lofted in from the nearer side, aimed to drop onto the PulseOps card
-  // wherever this load placed it; physics takes it from there.
-  { x: 1.01, y: 0.14, aim: ".hw--pulseops .frame", along: 0.6 },
-  // A driven ground pass from the left, along the touchline.
-  { x: -0.03, y: 0.9, vx: 0.0058, vy: -0.004 },
-  // Chipped in from the right, low.
-  { x: 1.03, y: 0.82, vx: -0.0052, vy: -0.011 },
-];
-const MOBILE_PASSES = [
-  { x: 1.05, y: 0.94, vx: -0.011, vy: -0.004 },
-  { x: -0.05, y: 0.94, vx: 0.01, vy: -0.006 },
-];
+const FIRST = { kind: "lob", aim: ".hw--pulseops .frame", along: 0.6 };
+const FIRST_MOBILE = { kind: "roll", x: 1.05, y: 0.94, vx: -0.011, vy: -0.004 };
+const RETURNS = ["bottom-aim", "bottom-chip", "bottom-curve"];
 
 const FIRST_DELAY = 2600; // after the name and cards have settled
-const LATER_DELAY = [28000, 46000];
+const RETURN_DELAY = 380;
 const MAX_LIFETIME = 11000;
+const EXIT_MS = 420;
 
-export default function Ball({ stageRef, ready, onHit }) {
+export default function Ball({ stageRef, ready, visible, onHit }) {
   const ballRef = useRef(null);
   const spinRef = useRef(null);
   const shadowRef = useRef(null);
   const canvasRef = useRef(null);
+  const visibleRef = useRef(false);
+
+  useEffect(() => {
+    visibleRef.current = visible;
+  }, [visible]);
 
   useEffect(() => {
     if (!ready) return;
@@ -50,19 +48,23 @@ export default function Ball({ stageRef, ready, onHit }) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     const mobile = window.matchMedia("(max-width: 760px)").matches;
-    const passes = mobile ? MOBILE_PASSES : DESKTOP_PASSES;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    const s = { active: false, x: 0, y: 0, vx: 0, vy: 0, angle: 0, spin: 0, born: 0, r: 16, grounded: false, supported: false };
+    const s = { x: 0, y: 0, vx: 0, vy: 0, angle: 0, spin: 0, curl: 0, born: 0, r: 16 };
     const trail = [];
-    let pass = 0;
-    let nextAt = performance.now() + FIRST_DELAY;
+    let phase = "idle"; // idle | entering | active | exiting
+    let startAt = 0; // when the next sequence launches (0 = none scheduled)
+    let exitAt = 0;
+    let spent = false; // this visit's sequence has played
+    let returning = false; // the visitor has left the hero at least once
+    let wasVisible = false;
+    let lastReturn = "";
     let W = 0;
     let H = 0;
+    let margin = 24;
     let lastHit = new Map(); // card -> timestamp, so one contact = one reaction
 
     const gravity = () => H * 0.00062;
-    let margin = 24;
     const size = () => {
       W = stage.clientWidth;
       H = stage.clientHeight;
@@ -76,101 +78,146 @@ export default function Ball({ stageRef, ready, onHit }) {
     size();
     window.addEventListener("resize", size);
 
-    const launch = (profile) => {
-      let vx = (profile.vx ?? -0.006) * W;
-      let vy = (profile.vy ?? 0) * H;
-      let x = profile.x * W + (profile.x > 1 ? s.r * 2 : 0);
-      const y = profile.y * H;
-      const target = profile.aim && stage.querySelector(profile.aim);
-      if (target && target.offsetParent) {
-        // Enter from the side nearer the card, then solve the projectile so
-        // it lands on the card's top edge.
-        const origin = stage.getBoundingClientRect();
-        const r = target.getBoundingClientRect();
-        const tx = r.left - origin.left + r.width * profile.along;
-        const ty = r.top - origin.top - s.r;
-        x = tx > W / 2 ? W + s.r * 2 : -s.r * 2;
-        const T = Math.min(70, Math.max(28, Math.abs(tx - x) / 11));
-        vx = (tx - x) / T;
-        vy = (ty - y - 0.5 * gravity() * T * T) / T;
-      }
-      Object.assign(s, {
-        active: true,
-        x,
-        y,
-        vx,
-        vy,
-        spin: vx * 0.02,
-        born: performance.now(),
-        grounded: false,
-      });
-      s.y = Math.min(s.y, H - s.r);
-      trail.length = 0;
-      lastHit = new Map();
-      ball.classList.add("is-active");
-      shadow.classList.add("is-active");
-    };
-
-    const retire = (now) => {
-      s.active = false;
-      ball.classList.remove("is-active");
-      shadow.classList.remove("is-active");
-      pass += 1;
-      if (pass < passes.length) {
-        nextAt = now + LATER_DELAY[0] + Math.random() * (LATER_DELAY[1] - LATER_DELAY[0]);
-      } else {
-        nextAt = Infinity;
-      }
-    };
-
-    // Tap / click kicks the ball away from the pointer.
-    const kick = (e) => {
-      if (!s.active) return;
-      const box = stage.getBoundingClientRect();
-      const dx = s.x - (e.clientX - box.left);
-      const dir = dx === 0 ? (Math.random() > 0.5 ? 1 : -1) : Math.sign(dx);
-      s.vx = dir * W * 0.0085;
-      s.vy = -H * 0.016;
-      s.spin = s.vx * 0.05;
-      s.grounded = false;
-      s.born = performance.now(); // a fresh kick earns a fresh lifetime
-    };
-    ball.addEventListener("pointerdown", kick);
-
-    // The protected identity zone deflects; front cards are solid. Back cards
+    // The name's protected rects deflect; front cards are solid. Back cards
     // are "further away", so the ball passes in front of them.
     const collect = () => {
       const origin = stage.getBoundingClientRect();
-      const local = (el, pad = 0) => {
+      const local = (el) => {
         const r = el.getBoundingClientRect();
-        return {
-          l: r.left - origin.left - pad,
-          t: r.top - origin.top - pad,
-          r: r.right - origin.left + pad,
-          b: r.bottom - origin.top + pad,
-        };
+        return { l: r.left - origin.left, t: r.top - origin.top, r: r.right - origin.left, b: r.bottom - origin.top };
       };
-      const letters = unionRect(
-        [
-          stage.querySelector(".hero__row--1 .chars"),
-          stage.querySelector(".hero__xavier .chars"),
-          stage.querySelector(".hero__suna"),
-        ],
-        origin
-      );
-      const name = letters ? [{ ...expand(letters, margin), kind: "zone" }] : [];
+      const name = [
+        stage.querySelector(".hero__row--1 .chars"),
+        stage.querySelector(".hero__xavier .chars"),
+        stage.querySelector(".hero__suna"),
+      ]
+        .filter(Boolean)
+        .map((el) => ({ ...expand(unionRect([el], origin), margin), kind: "zone" }));
       const cards = [...stage.querySelectorAll(".hw.is-front")]
         .filter((el) => el.offsetParent)
         .map((el) => ({ ...local(el.querySelector(".frame")), kind: "card", i: Number(el.dataset.i) }));
       return [...name, ...cards];
     };
 
+    const nameBottom = () => Math.max(0, ...collect().filter((o) => o.kind === "zone").map((z) => z.b));
+
+    // Solve a projectile from (x, y) that lands on (tx, ty) after T frames.
+    const aimAt = (x, y, tx, ty, T) => ({ vx: (tx - x) / T, vy: (ty - y - 0.5 * gravity() * T * T) / T });
+
+    const begin = (x, y, vx, vy, extra = {}) => {
+      Object.assign(s, { x, y, vx, vy, spin: vx * 0.02, curl: 0, born: performance.now(), ...extra });
+      trail.length = 0;
+      lastHit = new Map();
+      phase = extra.fromBelow ? "entering" : "active";
+      ball.classList.add("is-active");
+      shadow.classList.add("is-active");
+    };
+
+    // First visit: a lob from the nearer side onto the PulseOps card.
+    const launchFirst = () => {
+      if (mobile) {
+        const f = FIRST_MOBILE;
+        begin(f.x * W, f.y * H, f.vx * W, f.vy * H);
+        return;
+      }
+      const target = stage.querySelector(FIRST.aim);
+      if (!target || !target.offsetParent) return launchReturn();
+      const origin = stage.getBoundingClientRect();
+      const r = target.getBoundingClientRect();
+      const tx = r.left - origin.left + r.width * FIRST.along;
+      const ty = r.top - origin.top - s.r;
+      const nb = nameBottom();
+      const y = ty > nb ? nb + s.r * 2 + (ty - nb) * 0.2 : Math.min(ty - s.r, Math.max(90, H * 0.1));
+      const x = tx > W / 2 ? W + s.r * 2 : -s.r * 2;
+      const T = Math.min(70, Math.max(28, Math.abs(tx - x) / 11));
+      const v = aimAt(x, y, tx, ty, T);
+      begin(x, y, v.vx, v.vy);
+    };
+
+    // Returning: the ball rises from the bottom edge — a different sequence each time.
+    const launchReturn = () => {
+      const options = RETURNS.filter((k) => k !== lastReturn);
+      let kind = options[Math.floor(Math.random() * options.length)];
+      const y0 = H + s.r * 2;
+      const g = gravity();
+      const room = Math.max(120, H - nameBottom() - s.r * 2); // height of the space under the name
+      const rise = (h) => -Math.sqrt(2 * g * (h + s.r * 3));
+
+      if (kind === "bottom-aim") {
+        const origin = stage.getBoundingClientRect();
+        const nb = nameBottom();
+        const cards = [...stage.querySelectorAll(".hw.is-front")]
+          .filter((el) => el.offsetParent)
+          .map((el) => el.querySelector(".frame").getBoundingClientRect())
+          .filter((r) => r.top - origin.top > nb);
+        if (cards.length) {
+          const r = cards[Math.floor(Math.random() * cards.length)];
+          const tx = r.left - origin.left + r.width * (0.25 + Math.random() * 0.5);
+          const ty = r.top - origin.top - s.r;
+          const x0 = Math.min(W * 0.9, Math.max(W * 0.1, tx + (Math.random() < 0.5 ? -1 : 1) * W * 0.18));
+          const T = 44 + Math.random() * 12;
+          const v = aimAt(x0, y0, tx, ty, T);
+          lastReturn = kind;
+          return begin(x0, y0, v.vx, v.vy, { fromBelow: true });
+        }
+        kind = "bottom-curve";
+      }
+
+      if (kind === "bottom-chip") {
+        const left = Math.random() < 0.5;
+        const x0 = W * (left ? 0.08 : 0.92);
+        lastReturn = kind;
+        return begin(x0, y0, (left ? 1 : -1) * W * (0.0035 + Math.random() * 0.0015), rise(room * 0.45), {
+          fromBelow: true,
+        });
+      }
+
+      // bottom-curve: struck with side-spin, so it bends as it rises.
+      const x0 = W * (0.25 + Math.random() * 0.5);
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      lastReturn = "bottom-curve";
+      begin(x0, y0, dir * W * 0.0022, rise(room * 0.6), { fromBelow: true, curl: -dir * W * 0.00005 });
+    };
+
+    // Leaving the hero: everything goes back to idle, ready for the next visit.
+    const reset = () => {
+      phase = "idle";
+      startAt = 0;
+      exitAt = 0;
+      trail.length = 0;
+      ball.classList.remove("is-active");
+      shadow.classList.remove("is-active");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    const retire = (now) => {
+      phase = "exiting";
+      exitAt = now + EXIT_MS;
+      spent = true;
+      ball.classList.remove("is-active");
+      shadow.classList.remove("is-active");
+    };
+
+    // Tap / click kicks the ball away from the pointer.
+    const kick = (e) => {
+      if (phase !== "active") return;
+      const box = stage.getBoundingClientRect();
+      const dx = s.x - (e.clientX - box.left);
+      const dir = dx === 0 ? (Math.random() > 0.5 ? 1 : -1) : Math.sign(dx);
+      s.vx = dir * W * 0.0085;
+      s.vy = -H * 0.016;
+      s.spin = s.vx * 0.05;
+      s.born = performance.now(); // a fresh kick earns a fresh lifetime
+    };
+    ball.addEventListener("pointerdown", kick);
+
     const collide = (box, now) => {
       const cx = Math.max(box.l, Math.min(s.x, box.r));
       const cy = Math.max(box.t, Math.min(s.y, box.b));
       let nx = s.x - cx;
       let ny = s.y - cy;
-      let dist = Math.hypot(nx, ny);
+      const dist = Math.hypot(nx, ny);
       if (dist >= s.r) return;
 
       if (dist === 0) {
@@ -199,18 +246,18 @@ export default function Ball({ stageRef, ready, onHit }) {
       const vn = s.vx * nx + s.vy * ny;
       if (vn >= 0) return;
       const impact = vn < -1;
-      const e = box.kind === "zone" ? 0.72 : impact ? 0.6 : 0; // the zone is springy; cards absorb
+      const e = box.kind === "zone" ? 0.72 : impact ? 0.6 : 0; // the name's zone is springy; cards absorb
       s.vx -= (1 + e) * vn * nx;
       s.vy -= (1 + e) * vn * ny;
       const tx = -ny;
       const ty = nx;
       const vt = s.vx * tx + s.vy * ty;
       if (impact) {
-        // Impact friction along the surface; spin picks up from it.
         s.vx -= vt * 0.12 * tx;
         s.vy -= vt * 0.12 * ty;
       }
       s.spin = vt / s.r;
+      s.curl = 0; // contact kills the curl
 
       if (impact && box.kind === "card" && now - (lastHit.get(box.i) ?? 0) > 250) {
         lastHit.set(box.i, now);
@@ -226,13 +273,13 @@ export default function Ball({ stageRef, ready, onHit }) {
       if (trail.length < 2) return;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
+      ctx.setLineDash([2, 5]);
       for (let i = 1; i < trail.length; i++) {
         const a = trail[i - 1];
         const b = trail[i];
         const k = i / trail.length;
-        ctx.strokeStyle = `rgba(20, 18, 15, ${(k * 0.28 * b.life).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(239, 233, 220, ${(k * 0.4 * b.life).toFixed(3)})`;
         ctx.lineWidth = 1 + k * 1.2;
-        ctx.setLineDash([2, 5]);
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
@@ -242,22 +289,39 @@ export default function Ball({ stageRef, ready, onHit }) {
 
     let last = performance.now();
     const stop = onFrame((now) => {
-      const box = stage.getBoundingClientRect();
-      const visible = box.bottom > 0 && box.top < window.innerHeight && !document.hidden;
       const dt = Math.min((now - last) / 16.67, 2.5);
       last = now;
+      const vis = visibleRef.current && !document.hidden;
+
+      // Visibility transitions drive the lifecycle.
+      if (vis !== wasVisible) {
+        wasVisible = vis;
+        if (vis) {
+          if (!spent && phase === "idle") startAt = now + (returning ? RETURN_DELAY : FIRST_DELAY);
+        } else {
+          reset();
+          spent = false;
+          returning = true;
+        }
+      }
+      if (!vis) return;
 
       // Fade the trail even when the ball has gone.
       for (const p of trail) p.life -= 0.012 * dt;
       while (trail.length && trail[0].life <= 0) trail.shift();
 
-      if (!s.active) {
-        if (visible && now >= nextAt) launch(passes[pass]);
+      if (phase === "idle" || phase === "exiting") {
+        if (phase === "exiting" && now >= exitAt) phase = "idle";
+        if (phase === "idle" && startAt && now >= startAt) {
+          startAt = 0;
+          if (returning) launchReturn();
+          else launchFirst();
+        }
         drawTrail();
-        return;
+        if (phase === "idle" || phase === "exiting") return;
       }
-      if (!visible) return;
 
+      const box = stage.getBoundingClientRect();
       const g = gravity();
       const floor = H - s.r - 2;
       const obstacles = collect();
@@ -280,20 +344,26 @@ export default function Ball({ stageRef, ready, onHit }) {
         }
 
         s.vy += g * h;
+        s.vx += s.curl * h; // side-spin bends the flight
+        s.curl *= 1 - 0.01 * h;
         s.vx *= 1 - 0.0016 * h;
         s.vy *= 1 - 0.0016 * h;
         s.x += s.vx * h;
         s.y += s.vy * h;
 
+        // Entering from below: the floor switches on once the ball is above it.
+        if (phase === "entering" && s.y < floor - s.r) phase = "active";
+
         // The stage floor is the touchline: bounce, then roll.
         s.grounded = false;
         s.supported = false;
         s.onZone = false;
-        if (s.y > floor) {
+        if (phase === "active" && s.y > floor) {
           s.y = floor;
           if (s.vy > 1.4) {
             s.vy = -s.vy * 0.58;
             s.vx *= 0.94;
+            s.curl = 0;
           } else {
             s.vy = 0;
             s.grounded = true;
@@ -303,14 +373,12 @@ export default function Ball({ stageRef, ready, onHit }) {
 
         for (const o of obstacles) collide(o, now);
 
-        // Card tops and letter tops are never perfectly level: a slow ball
-        // keeps rolling the way it was going and drops off the edge.
+        // Card tops are never perfectly level: a slow ball keeps rolling and drops off the edge.
         if (s.supported && Math.abs(s.vx) < 1.4) {
           s.vx += (Math.sign(s.vx) || -1) * 0.09 * h;
           s.spin = s.vx / s.r;
         }
-        // The zone above the name is never somewhere to rest: it sheds the
-        // ball quickly off whichever end it's heading for.
+        // The space right above a word is never somewhere to rest: it sheds the ball.
         if (s.onZone) {
           s.vx += (Math.sign(s.vx) || -1) * 0.34 * h;
           s.spin = s.vx / s.r;
@@ -333,9 +401,10 @@ export default function Ball({ stageRef, ready, onHit }) {
       shadow.style.transform = `translate3d(${(s.x - s.r).toFixed(1)}px, 0, 0) scale(${(0.5 + near * 0.6).toFixed(3)}, 1)`;
       shadow.style.opacity = (near * 0.5).toFixed(3);
 
-      const gone = s.x < -s.r * 4 || s.x > W + s.r * 4 || s.y > H + s.r * 4;
+      const gone = s.x < -s.r * 4 || s.x > W + s.r * 4 || (phase === "active" && s.y > H + s.r * 4);
+      const sankBack = phase === "entering" && s.vy > 0 && s.y > H + s.r * 3;
       const tired = now - s.born > MAX_LIFETIME || (s.grounded && Math.abs(s.vx) < 0.15);
-      if (gone) retire(now);
+      if (gone || sankBack) retire(now);
       else if (tired) {
         // Rather than stopping dead, it trickles off the nearest touchline.
         s.vx += Math.sign(s.x - W / 2 || 1) * 0.06 * dt;

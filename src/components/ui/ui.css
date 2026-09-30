@@ -655,6 +655,42 @@
   color: var(--plum);
 }
 
+/* ---------- Technical fragments ---------- */
+
+.frag {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3.5cqw;
+  padding: 7cqw 8cqw;
+  background: #0d1222;
+  color: #e6e9f2;
+  font-family: var(--f-mono);
+  font-size: 5.6cqw;
+  line-height: 1.4;
+}
+
+.frag__code {
+  word-break: break-word;
+}
+
+.frag__code b {
+  padding: 0.5cqw 2cqw;
+  border-radius: 1cqw;
+  background: rgba(255, 90, 31, 0.18);
+  color: #ff9a70;
+  font-weight: 600;
+}
+
+.frag__muted {
+  color: #7d88a6;
+  font-size: 0.82em;
+}
+
+.frag--mongo .frag__code {
+  font-size: 0.92em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ui,
   .ui * {

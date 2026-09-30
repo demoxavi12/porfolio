@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { projects, stackGround, stackLayers } from "../../data/content";
-import { useInView } from "../../hooks/useInView";
+import { useInViewReplay } from "../../hooks/useInViewReplay";
 import { useReducedMotion } from "../../hooks/useMedia";
 import { onFrame } from "../../lib/loop";
 import { scroll } from "../../lib/pointer";
@@ -36,7 +36,8 @@ export default function Stack() {
   const [hovered, setHovered] = useState(null);
   const [pinned, setPinned] = useState(null);
   const reduced = useReducedMotion();
-  const mapIn = useInView(mapRef, { margin: "0px 0px -18% 0px" });
+  // Replays every time the map comes back into view; resets when it leaves.
+  const mapIn = useInViewReplay(mapRef, { threshold: 0.2 });
 
   const active = hovered ?? pinned;
   const litTech =
@@ -74,10 +75,10 @@ export default function Stack() {
     "aria-pressed": pinned?.id === item.id,
   });
 
-  const techButton = (tech, i) => {
+  const techButton = (tech, i, li, k) => {
     const state = litTech ? (litTech.has(tech) ? "is-lit" : "is-dim") : "";
     return (
-      <li key={tech} className={`stack__item ${state}`} style={scatter(i)}>
+      <li key={tech} className={`stack__item ${state}`} style={{ ...scatter(i), "--li": li, "--k": k }}>
         <button type="button" data-cursor="Trace" {...bind({ type: "tech", id: tech })}>
           {tech}
         </button>
@@ -128,22 +129,22 @@ export default function Stack() {
       <div className={`stack__map ${mapIn ? "is-in" : ""}`} ref={mapRef}>
         <div className="stack__path">
           {stackLayers.map((layer, li) => (
-            <div key={layer.id} className="stack__layer">
+            <div key={layer.id} className="stack__layer" style={{ "--li": li }}>
               <header>
                 <span className="mono">0{li + 1}</span>
                 <h3>{layer.label}</h3>
                 <p className="serif">{layer.caption}</p>
               </header>
-              <ul>{layer.items.map((t, i) => techButton(t, li * 7 + i))}</ul>
+              <ul>{layer.items.map((t, i) => techButton(t, li * 7 + i, li, i))}</ul>
             </div>
           ))}
         </div>
 
         <div className="stack__ground">
           {stackGround.map((group, gi) => (
-            <div key={group.id} className="stack__group">
+            <div key={group.id} className="stack__group" style={{ "--li": 3 + gi * 0.5 }}>
               <h3 className="mono">{group.label}</h3>
-              <ul>{group.items.map((t, i) => techButton(t, 21 + gi * 6 + i))}</ul>
+              <ul>{group.items.map((t, i) => techButton(t, 21 + gi * 6 + i, 3 + gi * 0.5, i))}</ul>
             </div>
           ))}
         </div>

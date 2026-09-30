@@ -15,15 +15,16 @@
 }
 
 .ball {
-  --ball-fill: var(--paper);
-  --ball-ink: var(--ink);
+  /* Warm white with deep-navy panels: visible in the dark room without glowing. */
+  --ball-fill: #efe9dc;
+  --ball-ink: #1a2133;
   top: 0;
   left: 0;
   z-index: 5;
   border-radius: 50%;
   opacity: 0;
   will-change: transform;
-  filter: drop-shadow(0 6px 8px rgba(20, 18, 15, 0.22));
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.55));
   transition: opacity 0.4s;
 }
 
@@ -45,8 +46,9 @@
   inset: 0;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.55), transparent 42%),
-    radial-gradient(circle at 70% 76%, rgba(20, 18, 15, 0.28), transparent 60%);
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.6), transparent 40%),
+    radial-gradient(circle at 72% 78%, rgba(10, 14, 26, 0.45), transparent 62%),
+    conic-gradient(from 200deg, transparent, rgba(160, 180, 230, 0.12), transparent 30%);
   pointer-events: none;
 }
 
@@ -57,7 +59,7 @@
   width: 42px;
   height: 6px;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(20, 18, 15, 0.55), transparent);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.75), transparent);
   opacity: 0;
   transform-origin: center;
 }

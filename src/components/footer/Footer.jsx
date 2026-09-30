@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { person, sections, socials } from "../../data/content";
 import { useClock } from "../../hooks/useClock";
-import { useInView } from "../../hooks/useInView";
+import { useInViewReplay } from "../../hooks/useInViewReplay";
 import Chars from "../ui/Chars";
 import "./footer.css";
 
@@ -9,7 +9,8 @@ const YEAR = new Date().getFullYear();
 
 export default function Footer() {
   const wordRef = useRef(null);
-  const wordIn = useInView(wordRef, { margin: "0px" });
+  // The closing signature replays on every return to the footer.
+  const wordIn = useInViewReplay(wordRef, { threshold: 0.35 });
   const time = useClock();
 
   return (
@@ -58,7 +59,7 @@ export default function Footer() {
 
       <p ref={wordRef} className={`footer__word display ${wordIn ? "is-in" : ""}`} aria-hidden="true">
         <Chars text="SWARAJ" step={0.04} />
-        <Chars text="XAVIER" step={0.04} delay={0.2} className="footer__word-2" />
+        <Chars text="XAVIER" step={0.045} delay={0.32} className="footer__word-2" />
       </p>
 
       <div className="footer__base mono">

@@ -67,6 +67,34 @@
   color: var(--lime);
 }
 
+/* The closing signature: SWARAJ sweeps in from the left and up out of the
+   floor; XAVIER drops in from the right. Replays on every entry; resets
+   instantly when the footer leaves. */
+.footer__word .chars__c {
+  opacity: 0;
+  transition:
+    transform 1.05s var(--ease-out) var(--d),
+    opacity 0.5s var(--ease-out) var(--d);
+}
+
+.footer__word .chars:first-child .chars__c {
+  transform: translate3d(-38%, 108%, 0) skewX(10deg);
+}
+
+.footer__word .footer__word-2 .chars__c {
+  transform: translate3d(38%, -108%, 0) skewX(-10deg);
+}
+
+/* Must out-rank the :first-child start rule above, or SWARAJ never settles. */
+.footer__word.is-in .chars .chars__c {
+  opacity: 1;
+  transform: none;
+}
+
+.footer__word:not(.is-in) .chars__c {
+  transition: none;
+}
+
 .footer__base {
   display: flex;
   flex-wrap: wrap;

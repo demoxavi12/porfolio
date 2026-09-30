@@ -207,17 +207,46 @@
 
 /* ---------- items ---------- */
 
+/* Plays on every entry: each layer's heading lands, then its technologies
+   gather in order (Interface → Server → Data → the ground layer).
+   Leaving resets instantly, ready to replay. */
+.stack__layer header,
+.stack__group h3 {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.5s var(--ease-out) calc(var(--li) * 150ms),
+    transform 0.7s var(--ease-out) calc(var(--li) * 150ms);
+}
+
 .stack__item {
   opacity: 0;
   transform: translate(var(--sx), var(--sy)) rotate(var(--sr));
   transition:
-    opacity 0.9s var(--ease-out) calc(var(--si) * 22ms),
-    transform 1.4s var(--ease-out) calc(var(--si) * 22ms);
+    opacity 0.7s var(--ease-out) calc(var(--li) * 150ms + 90ms + var(--k) * 45ms),
+    transform 1s var(--ease-out) calc(var(--li) * 150ms + 90ms + var(--k) * 45ms);
 }
 
+.stack__map.is-in .stack__layer header,
+.stack__map.is-in .stack__group h3,
 .stack__map.is-in .stack__item {
   opacity: 1;
   transform: none;
+}
+
+.stack__map:not(.is-in) .stack__layer header,
+.stack__map:not(.is-in) .stack__group h3,
+.stack__map:not(.is-in) .stack__item {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stack__layer header,
+  .stack__group h3,
+  .stack__item {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .stack__item button {

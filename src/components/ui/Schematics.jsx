@@ -151,3 +151,43 @@ export function TokenUI() {
   );
 }
 
+
+// ---- Small technical fragments (secondary layer in the hero). Each one is a
+// concept from the real projects: rate limiting, MongoDB events, Git.
+
+export function HttpUI() {
+  return (
+    <div className="ui frag frag--http">
+      <p className="frag__code">
+        HTTP/1.1 <b>429</b>
+      </p>
+      <p className="frag__muted">Too Many Requests</p>
+      <p className="frag__muted">rateLimit() · PulseOps</p>
+    </div>
+  );
+}
+
+export function MongoUI() {
+  return (
+    <div className="ui frag frag--mongo">
+      <p className="frag__muted">mongosh</p>
+      <p className="frag__code">
+        db.events.find(&#123; <span className="c-k">type</span>: <span className="c-s">&quot;notification&quot;</span> &#125;)
+      </p>
+      <p className="frag__muted">MongoDB · Mongoose</p>
+    </div>
+  );
+}
+
+export function GitUI() {
+  return (
+    <div className="ui frag frag--git">
+      <p className="frag__code">
+        <span className="c-k">$</span> git push origin main
+      </p>
+      <p className="frag__muted">
+        → vercel · deploy<span className="code__caret" />
+      </p>
+    </div>
+  );
+}

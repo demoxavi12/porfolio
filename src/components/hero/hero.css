@@ -1,27 +1,104 @@
+/* ==========================================================================
+   Hero — a dark digital room. Near-black blue, a little cobalt and violet
+   light, a faint technical grid and grain; ivory type; floating interfaces.
+   ========================================================================== */
+
 .hero {
+  --h-bg: #0a0e1a;
+  --h-bg-2: #070a13;
+  --h-ink: #f1ece2;
+  --h-soft: #b9bccb;
+  --h-mute: #7c8299;
+  --h-line: rgba(214, 224, 255, 0.08);
   position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-  background:
-    linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 100% 25%,
-    var(--paper);
-  background-position: 0 -1px;
+  background: linear-gradient(180deg, var(--h-bg) 0%, #0b1020 55%, var(--h-bg-2) 100%);
+  color: var(--h-ink);
   overflow: clip;
+  isolation: isolate;
 }
 
+/* ---------- atmosphere ---------- */
+
+.hero__atmos {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Faint technical grid, fading out toward the edges */
+  background:
+    linear-gradient(var(--h-line) 1px, transparent 1px) 0 0 / 100% 25%,
+    repeating-linear-gradient(90deg, rgba(214, 224, 255, 0.035) 0 1px, transparent 1px 160px);
+  mask-image: radial-gradient(120% 90% at 50% 40%, #000 45%, transparent 100%);
+}
+
+/* Ambient light fields: cobalt high on the right, violet low on the left. */
+.hero__atmos::before,
+.hero__atmos::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  will-change: transform;
+}
+
+.hero__atmos::before {
+  top: -18%;
+  right: -12%;
+  width: 62vw;
+  height: 62vw;
+  background: radial-gradient(closest-side, rgba(43, 69, 245, 0.34), rgba(43, 69, 245, 0.08) 60%, transparent);
+  animation: hero-light 26s ease-in-out infinite alternate;
+}
+
+.hero__atmos::after {
+  bottom: -22%;
+  left: -14%;
+  width: 52vw;
+  height: 52vw;
+  background: radial-gradient(closest-side, rgba(112, 86, 214, 0.2), transparent 70%);
+  animation: hero-light 34s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes hero-light {
+  to {
+    transform: translate3d(-6vw, 4vh, 0) scale(1.08);
+  }
+}
+
+/* Grain — barely there, just enough to take the digital edge off. */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* The name sits in flow, exactly as designed. Around it the stage opens an
+   upper and a lower band of negative space; the placement engine
+   (layout.js) scatters the cards there, never over the name. */
 .hero__stage {
+  --nav: 80px;
+  --margin: clamp(24px, 3.5vw, 72px);
+  --band-top: clamp(190px, 28svh, 320px);
+  --band-bottom: clamp(230px, 34svh, 380px);
   position: relative;
+  z-index: 1;
   flex: 1;
-  min-height: max(560px, 76svh);
+  padding: calc(var(--nav) + var(--band-top) + var(--margin)) var(--gutter)
+    calc(var(--band-bottom) + var(--margin));
   perspective: 1400px;
-  /* The name's size. Card positions are computed at runtime around it (layout.js). */
-  --fs: clamp(4.2rem, min(14.5vw, 28svh), 19rem);
 }
 
 .hero__reg {
-  color: var(--ink);
-  opacity: 0.5;
+  color: var(--h-ink);
+  opacity: 0.3;
 }
 
 .hero__reg--tl {
@@ -71,8 +148,12 @@
   z-index: 1;
 }
 
+.hw.is-small {
+  z-index: 2;
+}
+
 .hw.is-hover {
-  z-index: 6;
+  z-index: 8;
 }
 
 .hw__inner {
@@ -84,58 +165,116 @@
     opacity 0.6s var(--ease-out);
 }
 
+/* Depth: far cards are dimmer and softer; fragments sit a step back. */
 .hw.is-back .hw__inner {
-  filter: blur(1.4px) saturate(0.8);
-  opacity: 0.88;
+  filter: blur(1.6px) brightness(0.7) saturate(0.8);
+  opacity: 0.82;
 }
 
-.hw.is-hover .hw__inner {
-  filter: none;
+.hw.is-small .hw__inner {
+  opacity: 0.9;
+}
+
+.hw.is-back.is-small .hw__inner {
+  opacity: 0.6;
+}
+
+/* Focus: the hovered card sharpens and brightens; the rest step back. */
+.hw.is-hover .hw__inner,
+.hw.is-swapping .hw__inner {
+  filter: brightness(1.08) saturate(1.05);
   opacity: 1;
 }
 
-.has-hover .hw:not(.is-hover) .hw__inner {
-  opacity: 0.6;
-  filter: blur(1.5px) saturate(0.6);
+.has-hover .hw:not(.is-hover):not(.is-swapping) .hw__inner {
+  filter: blur(2px) brightness(0.62) saturate(0.7);
+  opacity: 0.5;
 }
 
-.hw .frame {
+/* Frames in the dark room: dark chrome, deep shadow. */
+.hero .frame {
+  background: #0e1322;
+  box-shadow:
+    0 0 0 1px rgba(214, 224, 255, 0.09),
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 40px 80px -30px rgba(0, 0, 0, 0.8);
   transition: box-shadow 0.6s var(--ease-out);
+}
+
+.hero .frame__bar {
+  background: #121a2c;
+  color: #7f8aa8;
+  border-bottom-color: rgba(214, 224, 255, 0.07);
+}
+
+.hero .frame__tag {
+  background: #1c2640;
+  color: var(--lime);
 }
 
 .hw.is-hover .frame {
   box-shadow:
-    0 0 0 1.5px var(--accent, var(--ink)),
-    0 40px 80px -24px rgba(20, 18, 15, 0.5);
+    0 0 0 1px var(--accent, var(--h-ink)),
+    0 4px 10px rgba(0, 0, 0, 0.4),
+    0 70px 120px -30px rgba(0, 0, 0, 0.9);
 }
 
-.hw__caption {
+/* Project info, revealed on hover — inside the card, so it never reaches the name. */
+.hw__info {
   position: absolute;
-  top: calc(100% + 12px);
   left: 0;
-  display: flex;
-  gap: 8px;
-  font-size: 0.62rem;
-  color: var(--mute);
-  white-space: nowrap;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  gap: 4px;
+  padding: 44px 16px 14px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: linear-gradient(transparent, rgba(7, 10, 19, 0.86) 38%, rgba(7, 10, 19, 0.96));
+  color: var(--h-ink);
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(10px);
   transition:
-    opacity 0.4s,
+    opacity 0.35s var(--ease-out),
     transform 0.5s var(--ease-out);
+  pointer-events: none;
 }
 
-.hw__caption b {
-  color: var(--ink);
+.hw.is-hover .hw__info,
+.hw:focus-visible .hw__info {
+  opacity: 1;
+  transform: none;
+}
+
+.hw__info-top {
+  font-size: 0.6rem;
+  color: var(--h-mute);
+}
+
+.hw__info-top b {
+  margin-right: 6px;
+  padding: 1px 5px;
   background: var(--lime);
-  padding: 0 5px;
+  color: var(--ink);
   font-weight: 500;
 }
 
-.hw.is-hover .hw__caption,
-.hw:focus-visible .hw__caption {
-  opacity: 1;
-  transform: none;
+.hw__info-name {
+  font-size: clamp(1.05rem, 1.5vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.hw__info-stack {
+  font-size: 0.58rem;
+  color: var(--h-soft);
+  text-transform: none;
+}
+
+.hw__info-cta {
+  margin-top: 2px;
+  font-size: 0.6rem;
+  color: var(--lime);
 }
 
 .hw:focus-visible {
@@ -145,13 +284,11 @@
 /* ---------- the name ---------- */
 
 .hero__title {
-  position: absolute;
-  top: 14%;
-  left: var(--gutter);
-  /* Always the top layer — cards and the ball pass behind the name, never over it. */
-  z-index: 8;
+  position: relative;
+  z-index: 2;
   pointer-events: none;
   font-weight: inherit;
+  color: var(--h-ink);
 }
 
 .hero__row {
@@ -160,30 +297,31 @@
 }
 
 .hero__row--1 {
-  font-size: var(--fs);
+  font-size: clamp(4.6rem, min(20.5vw, 34svh), 25rem);
 }
 
-/* Xavier tucks in under SWARAJ, with SUNA stamped at its shoulder. */
+/* Xavier swings out to the right, with SUNA stamped at its shoulder. */
 .hero__row--2 {
   display: flex;
   align-items: flex-start;
-  gap: calc(var(--fs) * 0.1);
-  margin-top: calc(var(--fs) * -0.02);
-  padding-left: calc(var(--fs) * 0.52);
+  justify-content: flex-end;
+  gap: 1.6vw;
+  margin-top: -0.6vw;
 }
 
 .hero__xavier {
-  font-size: calc(var(--fs) * 0.96);
+  font-size: clamp(4.6rem, min(19vw, 32svh), 23rem);
   line-height: 0.86;
 }
 
 .hero__suna {
-  margin-top: calc(var(--fs) * 0.14);
+  margin-top: 2.2vw;
   padding: 0.12em 0.14em 0.02em;
-  font-size: calc(var(--fs) * 0.27);
+  font-size: clamp(1.6rem, min(5.2vw, 9svh), 6.5rem);
   line-height: 0.9;
   letter-spacing: -0.02em;
   background: var(--tangerine);
+  color: var(--ink);
   transform: rotate(-4deg) scale(0.6);
   opacity: 0;
   transition:
@@ -201,32 +339,33 @@
   right: var(--gutter);
   bottom: 18px;
   font-size: 0.62rem;
-  color: var(--mute);
+  color: var(--h-mute);
   white-space: pre;
 }
 
 /* ---------- foot ---------- */
 
+/* Sits in front of the stage: a returning football rises from behind it. */
 .hero__foot {
   position: relative;
-  z-index: 4;
+  z-index: 6;
   display: grid;
   grid-template-columns: 1fr 1.4fr 1fr;
   align-items: end;
   gap: 32px;
   padding: 22px var(--gutter) 28px;
-  border-top: 1px solid var(--line);
-  background: var(--paper);
+  border-top: 1px solid var(--h-line);
+  background: var(--h-bg-2);
 }
 
 .hero__role {
   display: grid;
   gap: 4px;
-  color: var(--mute);
+  color: var(--h-mute);
 }
 
 .hero__role span:first-child {
-  color: var(--ink);
+  color: var(--h-ink);
 }
 
 .hero__lede {
@@ -234,10 +373,12 @@
   line-height: 1.3;
   letter-spacing: -0.01em;
   max-width: 38ch;
+  color: var(--h-soft);
 }
 
 .hero__lede .serif {
   font-size: 1.12em;
+  color: var(--h-ink);
 }
 
 .hero__cta {
@@ -247,11 +388,22 @@
   gap: 12px;
 }
 
+.btn--ivory {
+  background: var(--h-ink);
+  color: var(--h-bg);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.8);
+}
+
+.btn--ivory:hover,
+.btn--ivory:focus-visible {
+  color: var(--ink);
+}
+
 .hero__status {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--mute);
+  color: var(--h-mute);
   text-align: right;
 }
 
@@ -269,13 +421,37 @@
   transition-delay: calc(0.9s + var(--r, 0) * 90ms);
 }
 
+.hero :focus-visible {
+  outline-color: var(--lime);
+}
+
 @media (hover: none) {
   .hero__coord {
     display: none;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .hero__atmos::before,
+  .hero__atmos::after {
+    animation: none;
+  }
+}
+
 /* ---------- tablet / mobile compositions ---------- */
+
+/* Tablets: fewer fragments, calmer density. */
+@media (max-width: 1100px) {
+  .hw--mongo {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .hw--git {
+    display: none;
+  }
+}
 
 @media (max-width: 1024px) {
   .hero__foot {
@@ -291,60 +467,75 @@
   }
 }
 
-/* Portrait tablets and phones: the name on top, the work below it. */
-@media (max-width: 1024px) and (orientation: portrait), (max-width: 760px) {
-  .hero__stage {
-    --fs: 19vw;
-    min-height: 620px;
-    height: 74svh;
-  }
-
-  .hero__title {
-    top: 12%;
-  }
-}
-
 @media (max-width: 760px) {
+  /* Phones: the name first, then a lower band for the work. */
   .hero__stage {
-    --fs: 22.5vw;
-    min-height: 560px;
-    height: 72svh;
+    padding: 96px var(--gutter) 420px;
   }
 
-  .hero__title {
-    top: 13%;
+  .hero__row--1 {
+    font-size: 23.5vw;
   }
 
-  .hero__row--2 {
-    padding-left: calc(var(--fs) * 0.3);
+  .hero__xavier {
+    font-size: 22vw;
+  }
+
+  .hero__suna {
+    font-size: 7.4vw;
+    margin-top: 3vw;
   }
 
   .hw--code,
-  .hw--token {
+  .hw--mongo,
+  .hw--git {
     display: none;
   }
 
-  /* Phones: a fixed, offset cascade below the name (the engine stays out of it). */
+  /* An offset cascade in the lower band, anchored to the stage floor:
+     three projects and two small fragments. */
   .hw--pulseops {
+    top: auto;
+    bottom: 170px;
     left: 34%;
-    top: 49%;
     width: 60vw;
   }
 
   .hw--chat {
+    top: auto;
+    bottom: 66px;
     left: -5%;
-    top: 62%;
     width: 48vw;
   }
 
   .hw--eleve {
-    left: 60%;
-    top: 75%;
-    width: 42vw;
+    top: auto;
+    bottom: 16px;
+    left: 58%;
+    width: 40vw;
+  }
+
+  .hw--token {
+    top: auto;
+    bottom: 262px;
+    left: 3%;
+    width: 27vw;
+  }
+
+  .hw--http {
+    top: auto;
+    bottom: 128px;
+    left: 72%;
+    width: 24vw;
   }
 
   .hw.is-back .hw__inner {
-    filter: none;
+    filter: brightness(0.8);
+  }
+
+  .hero__atmos::before {
+    width: 120vw;
+    height: 120vw;
   }
 
   .hero__foot {
