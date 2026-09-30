@@ -68,7 +68,7 @@ export default function Ball({ stageRef, ready, onHit }) {
       canvas.height = H * dpr;
       s.r = Math.max(12, Math.min(W * 0.0135, 21));
       const row = stage.querySelector(".hero__row--1");
-      capInset = row ? parseFloat(getComputedStyle(row).fontSize) * 0.075 : 0;
+      capInset = row ? parseFloat(getComputedStyle(row).fontSize) * 0.065 : 0;
       ball.style.width = ball.style.height = `${s.r * 2}px`;
       shadow.style.setProperty("--ball-d", `${s.r * 2}px`);
     };
@@ -292,7 +292,7 @@ export default function Ball({ stageRef, ready, onHit }) {
           } else {
             s.vy = 0;
             s.grounded = true;
-            s.vx *= 1 - 0.006 * h;
+            s.vx *= 1 - 0.0016 * h;
           }
         }
 
